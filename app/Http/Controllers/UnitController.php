@@ -26,7 +26,10 @@ class UnitController extends Controller
             'available_shifts.*.name' => 'required|string|max:255',
             'available_shifts.*.start_time' => 'required|string',
             'available_shifts.*.end_time' => 'required|string',
+            'working_days' => 'nullable|array',
         ]);
+
+        $validated['working_days'] = $request->input('working_days', []);
 
         Unit::create($validated);
 
@@ -46,7 +49,10 @@ class UnitController extends Controller
             'available_shifts.*.name' => 'required|string|max:255',
             'available_shifts.*.start_time' => 'required|string',
             'available_shifts.*.end_time' => 'required|string',
+            'working_days' => 'nullable|array',
         ]);
+
+        $validated['working_days'] = $request->input('working_days', []);
 
         $unit->update($validated);
 

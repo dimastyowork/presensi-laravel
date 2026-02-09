@@ -41,14 +41,6 @@
                     @enderror
                 </div>
 
-                <!-- Email -->
-                <div class="form-group">
-                    <label class="form-label">Email <span class="required">*</span></label>
-                    <input type="email" name="email" value="{{ old('email') }}" class="form-input @error('email') error @enderror" placeholder="contoh@email.com" required>
-                    @error('email')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
 
                 <!-- Unit -->
                 <div class="form-group">

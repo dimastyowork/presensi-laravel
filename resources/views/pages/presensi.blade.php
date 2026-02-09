@@ -20,6 +20,24 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger animate-bounce">
+                    <div class="alert-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3"/></svg>
+                    </div>
+                    <span class="alert-text">{{ session('error') }}</span>
+                </div>
+            @endif
+
+            @if(!$isWorkingDay)
+                <div class="alert alert-warning animate-pulse">
+                    <div class="alert-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-width="2.5"/></svg>
+                    </div>
+                    <span class="alert-text">Bukan Hari Kerja: {{ $dayName }} tidak terdaftar sebagai hari kerja untuk unit Anda.</span>
+                </div>
+            @endif
+
             <div class="welcome-header">
                 <h1 class="welcome-title">
                     Selamat {{ \Carbon\Carbon::now()->hour < 11 ? 'Pagi' : (\Carbon\Carbon::now()->hour < 15 ? 'Siang' : (\Carbon\Carbon::now()->hour < 18 ? 'Sore' : 'Malam')) }}, 
@@ -29,8 +47,8 @@
             </div>
 
             <div class="choice-cards">
-                <div @click="if(!hasIn) { type = 'in'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
-                    :class="hasIn ? 'card-disabled' : 'card-entry card-blue'"
+                <div @click="if(!hasIn && {{ $isWorkingDay ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) { type = 'in'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
+                    :class="(hasIn || !{{ $isWorkingDay ? 'true' : 'false' }} || {{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} || {{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-blue'"
                     class="presence-card">
                     
                     <div class="card-icon-wrapper">
@@ -38,13 +56,23 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14" />
                         </svg>
                     </div>
-                    <h3 class="card-title">Absen Masuk</h3>
+                    <h3 class="card-title">Absen Masuk {{ $activeShiftInfo['shift_name'] ? '- ' . $activeShiftInfo['shift_name'] : '' }}</h3>
                     <p class="card-status" :class="hasIn ? 'status-active' : ''">
                         <template x-if="hasIn">
                             <span>Sudah Terdaftar • {{ $presence && $presence->time_in ? \Carbon\Carbon::parse($presence->time_in)->format('H:i') : '' }}</span>
                         </template>
                         <template x-if="!hasIn">
-                            <span>Mulai tugas hari ini</span>
+                            <span>
+                                @if(!$isWorkingDay)
+                                    Bukan hari kerja
+                                @elseif($activeShiftInfo['is_expired'])
+                                    Shift sudah berakhir ({{ $activeShiftInfo['end_time'] ? $activeShiftInfo['end_time']->format('H:i') : '' }})
+                                @elseif($activeShiftInfo['is_too_early'])
+                                    Belum dibuka (Buka {{ $activeShiftInfo['start_time'] ? (clone $activeShiftInfo['start_time'])->subMinutes(60)->format('H:i') : '' }})
+                                @else
+                                    Mulai tugas hari ini
+                                @endif
+                            </span>
                         </template>
                     </p>
                     
@@ -265,14 +293,25 @@
         display: flex;
         align-items: center;
         gap: 15px;
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        padding: 15px 25px;
-        border-radius: 20px;
-        margin-bottom: 40px;
-        color: var(--brand-emerald);
-        font-weight: 700;
         backdrop-filter: blur(10px);
+    }
+
+    .alert-success {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: var(--brand-emerald);
+    }
+
+    .alert-danger {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .alert-warning {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #f59e0b;
     }
 
     .welcome-header { text-align: center; margin-bottom: 60px; }

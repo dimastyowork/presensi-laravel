@@ -13,105 +13,200 @@ class PresenceController extends Controller
 {
     public function index(Request $request)
     {
-        $today = Carbon::today()->toDateString();
         $userId = Auth::id(); 
+        $user = Auth::user();
+        $now = Carbon::now();
+        $today = Carbon::today();
         
+        // Search for the most relevant presence:
+        // 1. First, an unfinished session (time_out is null)
+        // 2. Otherwise, the session for the calendar today
         $presence = Presence::where('user_id', $userId)
-            ->where('date', $today)
+            ->whereNull('time_out')
+            ->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
             ->first();
 
-        $selectedType = $request->query('type');
+        if (!$presence) {
+            $presence = Presence::where('user_id', $userId)
+                ->where('date', $today->toDateString())
+                ->first();
+        }
 
-        return view('pages.presensi', compact('presence', 'selectedType'));
+        $unit = \App\Models\Unit::where('name', $user->unit)->first();
+        $isWorkingDay = true;
+        $dayName = $today->isoFormat('dddd');
+
+        if ($unit && $unit->working_days && count($unit->working_days) > 0) {
+            $isWorkingDay = in_array($dayName, $unit->working_days);
+        }
+
+        // Shift proximity logic for UI
+        $closestShift = null;
+        $activeShiftInfo = [
+            'is_expired' => false,
+            'is_too_early' => false,
+            'logical_date' => $today,
+            'shift_name' => null,
+            'start_time' => null,
+            'end_time' => null
+        ];
+
+        if ($unit && $unit->available_shifts && count($unit->available_shifts) > 0) {
+            $minDiff = null;
+            foreach ($unit->available_shifts as $shift) {
+                if (!is_array($shift) || !isset($shift['start_time'])) continue;
+                $tS = Carbon::parse($today->toDateString() . ' ' . $shift['start_time']);
+                $diffs = [
+                    ['time' => $tS, 'logical' => $today],
+                    ['time' => (clone $tS)->subDay(), 'logical' => (clone $today)->subDay()],
+                    ['time' => (clone $tS)->addDay(), 'logical' => (clone $today)->addDay()],
+                ];
+                foreach ($diffs as $d) {
+                    $diff = abs($now->diffInMinutes($d['time']));
+                    if ($minDiff === null || $diff < $minDiff) {
+                        $minDiff = $diff;
+                        $closestShift = $shift;
+                        $activeShiftInfo['start_time'] = $d['time'];
+                        $activeShiftInfo['logical_date'] = $d['logical'];
+                    }
+                }
+            }
+            if ($closestShift) {
+                $activeShiftInfo['shift_name'] = $closestShift['name'];
+                $activeShiftInfo['end_time'] = Carbon::parse($activeShiftInfo['logical_date']->toDateString() . ' ' . $closestShift['end_time']);
+                if ($activeShiftInfo['end_time']->lt($activeShiftInfo['start_time'])) {
+                    $activeShiftInfo['end_time']->addDay();
+                }
+
+                $activeShiftInfo['is_expired'] = $now->gt($activeShiftInfo['end_time']);
+                $activeShiftInfo['is_too_early'] = $now->lt((clone $activeShiftInfo['start_time'])->subMinutes(60));
+            }
+        }
+
+        $selectedType = $request->query('type');
+        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo'));
     }
 
     public function store(Request $request)
     {
         $userId = Auth::id();
-        $today = Carbon::today()->toDateString();
-        $now = Carbon::now()->toTimeString();
+        $user = Auth::user();
+        $now = Carbon::now();
         $type = $request->input('type', 'in');
+        $unit = \App\Models\Unit::where('name', $user->unit)->first();
 
-        $presence = Presence::where('user_id', $userId)
-            ->where('date', $today)
-            ->first();
+        // 1. Identify Closest Shift and Logical Work Date
+        $shiftName = null;
+        $status = 'Hadir';
+        $logicalDate = Carbon::today();
 
-        if ($type === 'in' && $presence && $presence->time_in) {
-            return back()->with('error', 'Anda sudah absen masuk hari ini.');
-        }
+        if ($unit && $unit->available_shifts && count($unit->available_shifts) > 0) {
+            $closestShift = null;
+            $closestShiftStartTime = null;
+            $minDiff = null;
 
-        if ($type === 'out' && (!$presence || !$presence->time_in)) {
-            return back()->with('error', 'Anda harus absen masuk terlebih dahulu.');
-        }
+            foreach ($unit->available_shifts as $shift) {
+                if (!is_array($shift) || !isset($shift['start_time'])) continue;
 
-        if ($type === 'out' && $presence && $presence->time_out) {
-            return back()->with('error', 'Anda sudah absen keluar hari ini.');
-        }
+                try {
+                    $todayStart = Carbon::parse(Carbon::today()->toDateString() . ' ' . $shift['start_time']);
+                    $yesterdayStart = (clone $todayStart)->subDay();
+                    $tomorrowStart = (clone $todayStart)->addDay();
 
-        $imagePath = null;
-        if ($request->image) {
-            $image = $request->image;
-            $image = str_replace('data:image/jpeg;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imageName = $type . '_' . $userId . '_' . time() . '.jpg';
-            $imagePath = 'presences/' . $imageName;
-            Storage::disk('public')->put($imagePath, base64_decode($image));
-        }
+                    $diffs = [
+                        ['diff' => abs($now->diffInMinutes($todayStart)), 'time' => $todayStart, 'logical' => Carbon::today()],
+                        ['diff' => abs($now->diffInMinutes($yesterdayStart)), 'time' => $yesterdayStart, 'logical' => Carbon::yesterday()],
+                        ['diff' => abs($now->diffInMinutes($tomorrowStart)), 'time' => $tomorrowStart, 'logical' => Carbon::tomorrow()],
+                    ];
 
-        if ($type === 'in') {
-            $user = Auth::user();
-            $unit = \App\Models\Unit::where('name', $user->unit)->first();
-            $status = 'Hadir';
-            $shiftName = null;
+                    usort($diffs, fn($a, $b) => $a['diff'] <=> $b['diff']);
+                    $best = $diffs[0];
 
-            if ($unit && $unit->available_shifts && count($unit->available_shifts) > 0) {
-                $currentTime = Carbon::now();
-                $closestShift = null;
-                $minDiff = null;
-
-                foreach ($unit->available_shifts as $shift) {
-                    if (!is_array($shift) || !isset($shift['start_time'])) {
-                        continue;
+                    if ($minDiff === null || $best['diff'] < $minDiff) {
+                        $minDiff = $best['diff'];
+                        $closestShift = $shift;
+                        $closestShiftStartTime = $best['time'];
+                        $logicalDate = $best['logical'];
                     }
+                } catch (\Exception $e) { continue; }
+            }
 
-                    try {
-                        $startTime = Carbon::createFromFormat('H:i', $shift['start_time']);
-                        
-                        $absDiff = abs($currentTime->diffInMinutes($startTime));
-                        if ($minDiff === null || $absDiff < $minDiff) {
-                            $minDiff = $absDiff;
-                            $closestShift = $shift;
-                        }
-                    } catch (\Exception $e) {
-                        continue;
-                    }
+            if ($closestShift && $closestShiftStartTime) {
+                $shiftName = $closestShift['name'];
+                
+                // Calculate Expected End Time
+                $closestShiftEndTime = Carbon::parse($logicalDate->toDateString() . ' ' . $closestShift['end_time']);
+                if ($closestShiftEndTime->lt($closestShiftStartTime)) {
+                    $closestShiftEndTime->addDay();
                 }
 
-                if ($closestShift) {
-                    $shiftName = $closestShift['name'];
-                    $startTime = Carbon::createFromFormat('H:i', $closestShift['start_time']);
-                    
-                    // Terlambat if check-in is after start_time
-                    if ($currentTime->format('H:i:s') > $startTime->format('H:i:s')) {
-                        $status = 'Terlambat';
-                    }
+                // Block if shift has already ended
+                if ($type === 'in' && $now->gt($closestShiftEndTime)) {
+                    return back()->with('error', "Maaf, shift $shiftName untuk jadwal ini sudah berakhir pada pukul " . $closestShiftEndTime->format('H:i') . " (" . $closestShiftEndTime->isoFormat('D MMMM') . ").");
+                }
+
+                // Block if too early (more than 1 hour before)
+                if ($type === 'in' && $now->lt((clone $closestShiftStartTime)->subMinutes(60))) {
+                    return back()->with('error', "Maaf, absen untuk shift $shiftName belum dibuka. Silakan absen mulai pukul " . (clone $closestShiftStartTime)->subMinutes(60)->format('H:i') . ".");
+                }
+
+                if ($now->gt($closestShiftStartTime)) {
+                    $status = 'Terlambat';
+                }
+            }
+        }
+
+        // 2. Handle Clock In
+        if ($type === 'in') {
+            // Check Working Day Restriction based on Logical Date
+            if ($unit && $unit->working_days && count($unit->working_days) > 0) {
+                $dayName = $logicalDate->isoFormat('dddd');
+                if (!in_array($dayName, $unit->working_days)) {
+                    return back()->with('error', "Maaf, hari $dayName bukan hari kerja untuk unit Anda.");
                 }
             }
 
+            // Check for collision using Logical Date
+            $existing = Presence::where('user_id', $userId)
+                ->where('date', $logicalDate->toDateString())
+                ->where('shift_name', $shiftName)
+                ->first();
+
+            if ($existing && $existing->time_in) {
+                return back()->with('error', "Anda sudah absen masuk untuk shift $shiftName di tanggal " . $logicalDate->isoFormat('D MMMM Y'));
+            }
+
+            $imagePath = $this->handleImageUpload($request->image, $userId, 'in');
+
             Presence::create([
                 'user_id' => $userId,
-                'date' => $today,
+                'date' => $logicalDate->toDateString(),
                 'shift_name' => $shiftName,
                 'status' => $status,
-                'time_in' => $now,
+                'time_in' => $now->toTimeString(),
                 'location_in' => $request->location,
                 'image_in' => $imagePath,
                 'note' => $request->note,
             ]);
             $msg = 'Berhasil Absen Masuk';
-        } else {
+        } 
+        // 3. Handle Clock Out
+        else {
+            $presence = Presence::where('user_id', $userId)
+                ->whereNull('time_out')
+                ->orderBy('date', 'desc')
+                ->orderBy('time_in', 'desc')
+                ->first();
+
+            if (!$presence) {
+                return back()->with('error', 'Anda harus absen masuk terlebih dahulu.');
+            }
+
+            $imagePath = $this->handleImageUpload($request->image, $userId, 'out');
+
             $presence->update([
-                'time_out' => $now,
+                'time_out' => $now->toTimeString(),
                 'location_out' => $request->location,
                 'image_out' => $imagePath,
                 'note' => $request->note,
@@ -120,6 +215,17 @@ class PresenceController extends Controller
         }
 
         return redirect()->route('presence.index')->with('success', $msg);
+    }
+
+    private function handleImageUpload($imageData, $userId, $type)
+    {
+        if (!$imageData) return null;
+        
+        $image = str_replace(['data:image/jpeg;base64,', ' '], ['', '+'], $imageData);
+        $imageName = $type . '_' . $userId . '_' . time() . '.jpg';
+        $imagePath = 'presences/' . $imageName;
+        Storage::disk('public')->put($imagePath, base64_decode($image));
+        return $imagePath;
     }
 
     public function update(Request $request, Presence $presence)
@@ -146,6 +252,8 @@ class PresenceController extends Controller
                     'image_in' => $item->image_in,
                     'image_out' => $item->image_out,
                     'note' => $item->note,
+                    'shift_name' => $item->shift_name,
+                    'status' => $item->status,
                     'dayName' => \Carbon\Carbon::parse($item->date)->isoFormat('dddd'),
                     'dateFormatted' => \Carbon\Carbon::parse($item->date)->isoFormat('D MMMM YYYY')
                 ]];
@@ -184,9 +292,18 @@ class PresenceController extends Controller
             }
         }
 
-        // Filter by user
+        // Filter by user selection (Dropdown)
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
+        }
+
+        // Filter by user search (Text input)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%");
+            });
         }
         
         $totalAttendance = (clone $query)->count();
@@ -196,9 +313,12 @@ class PresenceController extends Controller
             ->groupBy('user_id')
             ->pluck('total', 'user_id');
 
+        $perPage = $request->input('per_page', 10);
+
         $presences = $query->orderBy('date', 'desc')
                           ->orderBy('time_in', 'desc')
-                          ->paginate(10);
+                          ->paginate($perPage)
+                          ->withQueryString();
         
         $units = \App\Models\Unit::orderBy('name')->pluck('name');
         $users = \App\Models\User::orderBy('name')->get(['id', 'name', 'nip']);

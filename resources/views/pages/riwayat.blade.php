@@ -185,8 +185,20 @@
             <template x-if="selectedData">
                 <div>
                     <div class="modal-header">
-                        <h2 class="text-main" x-text="selectedData.dayName"></h2>
-                        <p class="text-dim uppercase tracking-widest font-black" style="font-size: 10px;" x-text="selectedData.dateFormatted"></p>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h2 class="text-main" x-text="selectedData.dayName"></h2>
+                                <p class="text-dim uppercase tracking-widest font-black" style="font-size: 10px;" x-text="selectedData.dateFormatted"></p>
+                            </div>
+                            <template x-if="selectedData.status">
+                                <span :class="selectedData.status === 'Terlambat' ? 'badge-warning' : 'badge-primary'" 
+                                      class="status-badge-mini" 
+                                      x-text="selectedData.status"></span>
+                            </template>
+                        </div>
+                        <template x-if="selectedData.shift_name">
+                            <p class="text-brand font-bold text-xs mt-2" x-text="'Shift: ' + selectedData.shift_name"></p>
+                        </template>
                     </div>
 
                     <div class="modal-body">
@@ -282,6 +294,17 @@
     .text-brand { color: var(--brand-blue); }
     .header-subtitle { color: var(--text-dim); font-size: 1rem; margin-top: 10px; }
     .hub-badge { display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px; background: var(--brand-blue-transparent); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 50px; color: var(--brand-blue); font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; }
+
+    .status-badge-mini {
+        padding: 4px 12px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: white;
+    }
+    .status-badge-mini.badge-primary { background: var(--brand-blue); }
+    .status-badge-mini.badge-warning { background: var(--brand-orange); }
 
     .stats-grid { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 30px; margin-bottom: 60px; }
     .stat-card { border-radius: 40px; padding: 40px; position: relative; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); transition: all 0.3s ease; }

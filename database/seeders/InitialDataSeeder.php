@@ -61,7 +61,6 @@ class InitialDataSeeder extends Seeder
             \App\Models\User::create([
                 'nip' => $nip,
                 'name' => $userData['name'],
-                'email' => $nip . '@rsasabunda.com',
                 'unit' => $userData['unit'],
                 'password' => $password,
                 'is_initial_password' => true,

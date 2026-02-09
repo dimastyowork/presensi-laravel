@@ -35,6 +35,7 @@
                     <tr>
                         <th>No</th>
                         <th>Nama Unit</th>
+                        <th>Hari Kerja</th>
                         <th>Shift Tersedia</th>
                         <th>Dibuat</th>
                         <th>Aksi</th>
@@ -45,6 +46,19 @@
                     <tr>
                         <td>{{ $units->firstItem() + $index }}</td>
                         <td class="font-semibold">{{ $unit->name }}</td>
+                        <td>
+                            @if($unit->working_days && count($unit->working_days) > 0)
+                                <div class="days-container">
+                                    @foreach($unit->working_days as $day)
+                                        <span class="day-badge">
+                                            {{ $day }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-dim">Semua Hari</span>
+                            @endif
+                        </td>
                         <td>
                             @if($unit->available_shifts && count($unit->available_shifts) > 0)
                                 <div class="shifts-container">
@@ -84,7 +98,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="empty-state">
+                        <td colspan="6" class="empty-state">
                             <div class="empty-icon">
                                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
@@ -247,7 +261,7 @@
         background: var(--hover-bg);
     }
 
-    .shifts-container {
+    .shifts-container, .days-container {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
@@ -258,6 +272,16 @@
         padding: 3px 10px;
         background: rgba(16, 185, 129, 0.1);
         color: var(--brand-green);
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .day-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--brand-blue);
         border-radius: 6px;
         font-weight: 600;
         font-size: 0.75rem;

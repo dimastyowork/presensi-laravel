@@ -13,6 +13,8 @@ class Presence extends Model
     protected $fillable = [
         'user_id',
         'date',
+        'shift_name',
+        'status',
         'time_in',
         'time_out',
         'location_in',

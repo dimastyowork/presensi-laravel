@@ -33,6 +33,25 @@
                     @enderror
                 </div>
 
+                <!-- Working Days -->
+                <div class="form-group full-width">
+                    <label class="form-label">Hari Kerja <span class="required">*</span></label>
+                    <p class="form-hint">Pilih hari kerja yang berlaku untuk unit ini (Kosongkan jika berlaku setiap hari).</p>
+                    <div class="days-checkbox-grid">
+                        @php $currentDays = old('working_days', $unit->working_days) ?: []; @endphp
+                        @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $day)
+                            <label class="day-checkbox-item">
+                                <input type="checkbox" name="working_days[]" value="{{ $day }}" 
+                                    {{ is_array($currentDays) && in_array($day, $currentDays) ? 'checked' : '' }}>
+                                <span class="day-name">{{ $day }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('working_days')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <!-- Available Shifts -->
                 @php
                     $rawShifts = old('available_shifts', $unit->available_shifts) ?: [];
@@ -258,6 +277,43 @@
         font-size: 0.875rem;
         color: var(--text-dim);
         margin-bottom: 12px;
+    }
+
+    .days-checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .day-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .day-checkbox-item:hover {
+        background: var(--hover-bg);
+        border-color: var(--brand-blue);
+    }
+
+    .day-checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--brand-blue);
+        cursor: pointer;
+    }
+
+    .day-name {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-main);
     }
 
     .shifts-list {

@@ -9,9 +9,22 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderBy('created_at', 'desc')->paginate(10);
+        $search = $request->input('search');
+        $perPage = $request->input('per_page', 10);
+
+        $users = User::when($search, function ($query, $search) {
+            return $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%")
+                  ->orWhere('unit', 'like', "%{$search}%");
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate($perPage)
+        ->withQueryString();
+
         return view('pages.users.index', compact('users'));
     }
 
@@ -26,7 +39,6 @@ class UserController extends Controller
         $validated = $request->validate([
             'nip' => 'required|string|unique:users,nip',
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
             'unit' => 'nullable|string|max:255',
             'password' => 'required|string|min:6|confirmed',
         ]);
@@ -49,7 +61,6 @@ class UserController extends Controller
         $validated = $request->validate([
             'nip' => 'required|string|unique:users,nip,' . $user->id,
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
             'unit' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:6|confirmed',
         ]);

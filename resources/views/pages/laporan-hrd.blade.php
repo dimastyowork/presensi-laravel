@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+@push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
+@endpush
+
 @section('content')
 <div class="hrd-report-container" x-data="{ 
     showFilters: true,
@@ -29,7 +34,7 @@
     <div x-show="showFilters" x-transition class="filter-section glass">
         <form method="GET" action="{{ route('hrd.report') }}" class="filter-form">
             <div class="filter-grid">
-                <!-- Date Range -->
+                <!-- Date Range & Status -->
                 <div class="filter-group">
                     <label class="filter-label">Tanggal Mulai</label>
                     <input type="date" name="start_date" x-model="startDate" class="filter-input">
@@ -40,18 +45,6 @@
                     <input type="date" name="end_date" x-model="endDate" class="filter-input">
                 </div>
 
-                <!-- Unit Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Unit/Departemen</label>
-                    <select name="unit" x-model="selectedUnit" class="filter-input">
-                        <option value="">Semua Unit</option>
-                        @foreach($units as $unit)
-                            <option value="{{ $unit }}">{{ $unit }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Status Filter -->
                 <div class="filter-group">
                     <label class="filter-label">Status Kehadiran</label>
                     <select name="status" x-model="selectedStatus" class="filter-input">
@@ -61,11 +54,21 @@
                         <option value="tidak_hadir">Tidak Hadir</option>
                     </select>
                 </div>
+
+                <!-- Unit & Employee -->
+                <div class="filter-group grid-span-unit">
+                    <label class="filter-label">Unit/Departemen</label>
+                    <select name="unit" x-model="selectedUnit" class="filter-input">
+                        <option value="">Semua Unit</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit }}">{{ $unit }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 
-                <!-- Employee Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Nama Pegawai</label>
-                    <select name="user_id" class="filter-input">
+                <div class="filter-group grid-span-employee">
+                    <label class="filter-label">Pilih Pegawai (Searchable)</label>
+                    <select id="employee-select" name="user_id" class="filter-input">
                         <option value="">Semua Pegawai</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
@@ -179,14 +182,16 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="empty-state">
-                            <div class="empty-icon">
-                                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
+                        <td colspan="10" class="empty-state">
+                            <div class="empty-content">
+                                <div class="empty-icon">
+                                    <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                                <p class="empty-text">Tidak ada data kehadiran</p>
+                                <p class="empty-subtext">Coba ubah filter atau rentang tanggal</p>
                             </div>
-                            <p class="empty-text">Tidak ada data kehadiran</p>
-                            <p class="empty-subtext">Coba ubah filter atau rentang tanggal</p>
                         </td>
                     </tr>
                     @endforelse
@@ -194,17 +199,126 @@
             </table>
         </div>
 
-        <!-- Pagination -->
-        @if($presences->hasPages())
-        <div class="pagination-wrapper">
-            {{ $presences->links() }}
+        <!-- Footer: Pagination & Per Page -->
+        <div class="table-footer glass">
+            <div class="per-page-footer">
+                <form action="{{ route('hrd.report') }}" method="GET" id="perPageFormHrd">
+                    @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <label for="per_page">Tampilkan:</label>
+                    <select name="per_page" onchange="this.form.submit()" class="footer-select">
+                        <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </form>
+            </div>
+
+            @if($presences->hasPages())
+            <div class="pagination-wrapper">
+                {{ $presences->links() }}
+            </div>
+            @endif
         </div>
-        @endif
     </div>
 </div>
 
 @push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof TomSelect !== 'undefined') {
+            new TomSelect('#employee-select', {
+                create: false,
+                sortField: {
+                    field: 'text',
+                    direction: 'asc'
+                },
+                placeholder: 'Cari Nama atau NIP...',
+                allowEmptyOption: true,
+                maxOptions: null,
+            });
+        }
+    });
+</script>
 <style>
+    /* Tom Select Custom Styling for Glass UI */
+    .ts-wrapper .ts-control {
+        background: var(--hover-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 12px !important;
+        color: var(--text-main) !important;
+        padding: 12px 16px !important;
+        font-family: 'Outfit', sans-serif !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        min-height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        cursor: text !important;
+    }
+
+    .ts-wrapper .ts-control input {
+        color: var(--text-main) !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 1rem !important;
+    }
+
+    .ts-wrapper.focus .ts-control {
+        border-color: var(--brand-blue) !important;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
+        background: var(--card-bg) !important;
+    }
+
+    .ts-dropdown {
+        background: var(--glass-bg) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 16px !important;
+        color: var(--text-main) !important;
+        box-shadow: 0 10px 40px var(--shadow-color) !important;
+        margin-top: 8px !important;
+        padding: 8px !important;
+        z-index: 1000 !important;
+    }
+
+    .ts-dropdown .option {
+        padding: 10px 14px !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s !important;
+    }
+
+    .ts-dropdown .active {
+        background: var(--brand-blue) !important;
+        color: white !important;
+    }
+
+    .ts-dropdown .option:hover:not(.active) {
+        background: var(--hover-bg) !important;
+        color: var(--brand-blue) !important;
+    }
+
+    .ts-control .item {
+        color: var(--text-main) !important;
+        font-weight: 600 !important;
+    }
+
+    .ts-wrapper.single .ts-control {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        background-size: 16px !important;
+    }
+
+    .dark .ts-wrapper.single .ts-control {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    .ts-wrapper .ts-control input::placeholder {
+        color: var(--text-dim) !important;
+    }
+
     :root {
         --brand-blue: #3b82f6;
         --brand-blue-dark: #2563eb;
@@ -302,6 +416,8 @@
         padding: 30px;
         margin-bottom: 30px;
         backdrop-filter: blur(20px);
+        position: relative;
+        z-index: 50; /* Ensure filter section stays above table */
     }
 
     .filter-form {
@@ -312,8 +428,16 @@
 
     .filter-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(3, 1fr); /* Force 3 columns */
+        gap: 24px;
+    }
+
+    .grid-span-unit {
+        grid-column: span 1;
+    }
+
+    .grid-span-employee {
+        grid-column: span 2; /* Make employee search wider for better UX */
     }
 
     .filter-group {
@@ -460,8 +584,10 @@
         background: var(--glass-bg);
         border: 1px solid var(--card-border);
         border-radius: 24px;
-        overflow: hidden;
+        overflow: visible; /* Important: allow dropdown to overflow table container */
         backdrop-filter: blur(20px);
+        position: relative;
+        z-index: 10;
     }
 
     .table-wrapper {
@@ -572,74 +698,128 @@
 
     .empty-state {
         text-align: center;
-        padding: 60px 20px !important;
+        padding: 80px 24px !important;
+        vertical-align: middle;
+    }
+
+    .empty-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
     }
 
     .empty-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 24px;
         color: var(--text-dim);
-        margin-bottom: 16px;
+        opacity: 0.6;
     }
 
     .empty-text {
-        font-size: 1.125rem;
-        font-weight: 700;
+        font-size: 1.5rem;
+        font-weight: 800;
         color: var(--text-main);
-        margin-bottom: 8px;
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
     }
 
     .empty-subtext {
         color: var(--text-secondary);
-        font-size: 0.875rem;
+        font-size: 1rem;
+        max-width: 400px;
+        margin: 0 auto;
     }
 
-    .pagination-wrapper {
+    .table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         padding: 20px;
         border-top: 1px solid var(--card-border);
+        flex-wrap: wrap;
+        gap: 20px;
     }
 
-    /* Pagination Customization */
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 4px;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .page-item .page-link {
+    .per-page-footer {
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
+        gap: 10px;
         color: var(--text-secondary);
         font-weight: 600;
         font-size: 0.875rem;
+    }
+
+    .per-page-footer form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .footer-select {
+        padding: 8px 16px;
         background: var(--hover-bg);
-        border: 1px solid transparent;
-        transition: all 0.2s;
-        text-decoration: none;
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        color: var(--text-main);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
     }
 
-    .page-item.active .page-link {
-        background: var(--brand-blue);
-        color: white;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    .dark .footer-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     }
 
-    .page-item.disabled .page-link {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-item:not(.active):not(.disabled) .page-link:hover {
-        background: var(--card-bg);
+    .footer-select:focus {
+        outline: none;
         border-color: var(--brand-blue);
-        color: var(--brand-blue);
+        background-color: var(--card-bg);
     }
 
+    .pagination-wrapper nav {
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination-wrapper .text-sm {
+        color: var(--text-secondary) !important;
+    }
+
+    .pagination-wrapper .font-medium {
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-wrapper .text-gray-700,
+    .dark .pagination-wrapper .text-gray-500 {
+        color: var(--text-secondary) !important;
+    }
+
+    /* Hide the mobile view on desktop and vice versa */
+    .pagination-wrapper nav > div:first-child { 
+        display: flex;
+    }
+    .pagination-wrapper nav > div:last-child { 
+        display: none;
+    }
+
+    @media (min-width: 640px) {
+        .pagination-wrapper nav > div:first-child { 
+            display: none !important; 
+        }
+        .pagination-wrapper nav > div:last-child { 
+            display: flex !important; 
+        }
+    }
 
     .glass {
         backdrop-filter: blur(20px);
