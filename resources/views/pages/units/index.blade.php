@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Manajemen Unit')
 
 @section('content')
 <div class="unit-management-container">

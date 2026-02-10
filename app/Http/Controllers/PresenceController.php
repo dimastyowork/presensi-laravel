@@ -371,7 +371,7 @@ class PresenceController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $filters = $request->only(['start_date', 'end_date', 'unit', 'status']);
+        $filters = $request->only(['start_date', 'end_date', 'unit', 'status', 'user_id', 'search']);
         
         $filename = 'Laporan_Kehadiran_' . now()->format('Y-m-d_His') . '.xlsx';
         

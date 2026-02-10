@@ -62,23 +62,19 @@
     <div class="flex items-center h-20 overflow-hidden"
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen)
         ? 'xl:justify-center px-0'
-        : 'justify-start px-4'">
+        : 'justify-start px-6'">
 
-    <a href="/" class="flex items-center gap-2">
-        <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-            class="dark:hidden max-h-10 w-auto object-contain"
-            src="/images/logo/logo-header.svg" />
-
-        <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-            class="hidden dark:block max-h-10 w-auto object-contain"
-            src="/images/logo/logo-header.svg" />
-
-        <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-            class="h-10 w-10 min-h-10 min-w-10 object-contain"
-            src="/images/logo/logo-title.svg"
-            alt="Logo" />
-
-    </a>
+        <a href="/" class="flex items-center gap-3">
+            <img class="h-10 w-10 min-h-10 min-w-10 object-contain"
+                src="/images/logo/logo-title.svg"
+                alt="Logo" />
+            
+            <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
+                  class="text-xl font-bold tracking-tight text-gray-900 dark:text-white whitespace-nowrap transition-opacity duration-300"
+                  x-transition:enter="delay-100">
+                {{ config('app.name') }}
+            </span>
+        </a>
 
     </div>
 

@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Pengaturan')
 
 @section('content')
 <div class="settings-container" x-data>
@@ -50,7 +51,6 @@
                         this.links.splice(index, 1);
                     }
                 }">
-                    <!-- Hidden Input for Form Submission -->
                     <input type="hidden" name="external_links" :value="JSON.stringify(links)">
 
                     <template x-for="(link, index) in links" :key="index">

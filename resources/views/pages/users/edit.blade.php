@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Edit User')
 
 @section('content')
 <div class="user-form-container">

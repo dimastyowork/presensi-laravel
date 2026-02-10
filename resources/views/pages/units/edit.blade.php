@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Edit Unit')
 
 @section('content')
 <div class="unit-form-container">

@@ -21,7 +21,7 @@ class UserController extends Controller
                   ->orWhere('unit', 'like', "%{$search}%");
             });
         })
-        ->orderBy('created_at', 'desc')
+        ->orderBy('nip', 'asc')
         ->paginate($perPage)
         ->withQueryString();
 

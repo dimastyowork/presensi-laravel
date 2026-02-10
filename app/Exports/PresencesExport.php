@@ -39,12 +39,27 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
         if (isset($this->filters['status'])) {
             switch ($this->filters['status']) {
                 case 'hadir':
-                    $query->whereNotNull('time_in')->where('status', 'Hadir');
+                    $query->whereNotNull('time_in')->where('status', 'Hadir')->where('is_pending', false);
                     break;
                 case 'terlambat':
-                    $query->where('status', 'Terlambat');
+                    $query->where('status', 'Terlambat')->where('is_pending', false);
+                    break;
+                case 'pending':
+                    $query->where('is_pending', true);
                     break;
             }
+        }
+
+        if (isset($this->filters['user_id'])) {
+            $query->where('user_id', $this->filters['user_id']);
+        }
+
+        if (isset($this->filters['search'])) {
+            $search = $this->filters['search'];
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%");
+            });
         }
         
         return $query->orderBy('date', 'desc')

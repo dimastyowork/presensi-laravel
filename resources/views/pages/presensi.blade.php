@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Presensi')
 
 @section('content')
 <div x-data="{ 
