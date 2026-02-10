@@ -601,6 +601,9 @@
         display: flex;
         flex-direction: column;
     }
+    @media (max-width: 1023px) {
+        .content-card { padding: 15px; margin-bottom: 20px; border-radius: 30px; }
+    }
     .glass { 
         background: var(--glass-bg); 
         border: 1px solid var(--glass-border); 
@@ -644,7 +647,7 @@
     .camera-viewport {
         position: relative;
         width: 100%;
-        aspect-ratio: 3/4;
+        aspect-ratio: 9/16;
         background: #000;
         border-radius: 30px;
         overflow: hidden;

@@ -118,8 +118,27 @@
                         <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5" stroke-linecap="round"/></svg>
                     </div>
                     <div>
-                        <h4 class="stat-time text-main">100%</h4>
-                        <p class="stat-status text-emerald">Tepat Waktu</p>
+                        @php
+                            // Calculate Stats from the full dataset (presenceStats is a collection)
+                            $totalAttendance = $presenceStats->count();
+                            $lateCount = $presenceStats->filter(function($item) {
+                                // presenceStats in view is a Keyed Collection of Arrays, not Models
+                                return isset($item['status']) && $item['status'] === 'Terlambat';
+                            })->count();
+                            
+                            $onTimeCount = $totalAttendance - $lateCount;
+                            $percentage = $totalAttendance > 0 ? round(($onTimeCount / $totalAttendance) * 100) : 0;
+                            
+                            $colorClass = 'text-emerald';
+                            $statusText = 'Sangat Baik';
+                            
+                            if($percentage < 95) { $colorClass = 'text-blue'; $statusText = 'Baik'; }
+                            if($percentage < 85) { $colorClass = 'text-orange'; $statusText = 'Cukup'; }
+                            if($percentage < 70) { $colorClass = 'text-red-500'; $statusText = 'Perlu Perbaikan'; }
+                        @endphp
+                        
+                        <h4 class="stat-time text-main">{{ $percentage }}%</h4>
+                        <p class="stat-status {{ $colorClass }}">{{ $statusText }} ({{ $lateCount }} Terlambat)</p>
                     </div>
                 </div>
             </div>
