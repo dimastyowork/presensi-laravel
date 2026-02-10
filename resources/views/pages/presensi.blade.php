@@ -1243,7 +1243,6 @@
                     let instruction = "";
                     let color = "white";
                     
-                    // User turns LEFT -> Image turns LEFT (visually) -> Actual Image RIGHT -> noseRelX Increases
                     switch(window.livenessState) {
                         case 0:
                             instruction = "Lihat Lurus ke Kamera";
@@ -1252,25 +1251,16 @@
                             }
                             break;
                         case 1:
-                            instruction = "Tengok KIRI Pelan-pelan >>";
-                            if (noseRelX > 0.65) window.livenessState = 2;
+                            instruction = "KEDIPKAN Mata Anda";
+                            if (avgEAR < 0.25) window.livenessState = 2; 
                             break;
                         case 2:
-                            instruction = "<< Tengok KANAN Pelan-pelan";
-                            if (noseRelX < 0.35) window.livenessState = 3;
-                            break;
-                        case 3:
-                            instruction = "KEDIPKAN Mata Anda";
-                            if (avgEAR < 0.25) window.livenessState = 4;
-                            break;
-                        case 4:
                             instruction = "VERIFIKASI BERHASIL!";
                             color = "#10b981";
                             if(faceDetectedInput) faceDetectedInput.value = "true";
                             break;
                     }
                     
-                    // Restore context to draw text correctly (unmirrored text)
                     if (useFrontCamera) ctx.restore(); 
                     
                     ctx.font = "900 24px 'Outfit', sans-serif";
@@ -1281,7 +1271,7 @@
                     ctx.fillStyle = color;
                     ctx.fillText(instruction, canvas.width/2, 50);
 
-                    if (window.livenessState === 4) {
+                    if (window.livenessState === 2) {
                         snapBtn.style.borderColor = "#10b981"; 
                         snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
                         snapBtn.disabled = false;
@@ -1292,17 +1282,13 @@
                     }
                     
                 } else {
-                    // Fallback: Face found but no landmarks (Simple Mode)
-                    // This happens if model load failed or fallback triggered
                     if (useFrontCamera) ctx.restore();
                     
-                    // Draw Warning
                     ctx.font = "bold 16px Arial";
                     ctx.fillStyle = "yellow";
                     ctx.textAlign = "center";
                     ctx.fillText("Model Liveness Tidak Lengkap", canvas.width/2, 30);
                     
-                    // Allow simple detection
                     snapBtn.style.borderColor = "#10b981";
                     snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
                     snapBtn.disabled = false;
@@ -1310,11 +1296,10 @@
                 }
 
             } else {
-                // No face detected
                 if (useFrontCamera) ctx.restore();
                 
                 if(faceDetectedInput) faceDetectedInput.value = "false";
-                window.livenessState = 0; // Reset
+                window.livenessState = 0;
                 snapBtn.style.borderColor = "#f59e0b";
                 snapBtn.style.boxShadow = "none";
             }
