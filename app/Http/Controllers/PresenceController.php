@@ -249,8 +249,21 @@ class PresenceController extends Controller
         $image = str_replace(['data:image/jpeg;base64,', ' '], ['', '+'], $imageData);
         $imageName = $type . '_' . $userId . '_' . time() . '.jpg';
         $imagePath = 'presences/' . $imageName;
-        Storage::disk('public')->put($imagePath, base64_decode($image));
+        Storage::disk('local')->put($imagePath, base64_decode($image));
         return $imagePath;
+    }
+
+    public function showImage($filename)
+    {
+        $path = 'presences/' . $filename;
+        if (!Storage::disk('local')->exists($path)) {
+            abort(404);
+        }
+        
+        $file = Storage::disk('local')->get($path);
+        $type = Storage::disk('local')->mimeType($path);
+        
+        return response($file, 200)->header("Content-Type", $type);
     }
 
     public function update(Request $request, Presence $presence)

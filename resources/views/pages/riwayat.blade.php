@@ -216,13 +216,13 @@
                         <div class="photo-grid mt-6" x-show="selectedData.image_in || selectedData.image_out" style="display: flex; gap: 15px; margin-top: 20px;">
                             <template x-if="selectedData.image_in">
                                 <div class="photo-box">
-                                    <img :src="'/storage/' + selectedData.image_in" class="photo-img shadow-premium">
+                                    <img :src="'/images/' + selectedData.image_in" class="photo-img shadow-premium">
                                     <span class="photo-label bg-blue shadow-blue">IN</span>
                                 </div>
                             </template>
                             <template x-if="selectedData.image_out">
                                 <div class="photo-box">
-                                    <img :src="'/storage/' + selectedData.image_out" class="photo-img shadow-premium">
+                                    <img :src="'/images/' + selectedData.image_out" class="photo-img shadow-premium">
                                     <span class="photo-label bg-orange shadow-orange">OUT</span>
                                 </div>
                             </template>

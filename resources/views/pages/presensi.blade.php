@@ -574,6 +574,25 @@
         grid-template-columns: 1.4fr 1fr;
         gap: 40px;
     }
+    
+    @media (max-width: 1023px) {
+        .main-form-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .media-column, .details-column {
+            display: contents;
+        }
+
+        /* Order: 1. Jam, 2. Foto, 3. GPS, 4. Catatan */
+        .clock-card { order: 1; }
+        .media-column > .content-card:first-child { order: 2; } /* Camera card is first child of media-column */
+        .media-column > .content-card:last-child { order: 3; } /* GPS card is last child of media-column */
+        .details-column > .content-card { order: 4; } /* Form fields */
+        .policy-card { order: 5; }
+    }
 
     .content-card {
         border-radius: 40px;
@@ -625,11 +644,14 @@
     .camera-viewport {
         position: relative;
         width: 100%;
-        aspect-ratio: 4/3;
+        aspect-ratio: 3/4;
         background: #000;
         border-radius: 30px;
         overflow: hidden;
         border: 1px solid var(--glass-border);
+    }
+    @media (min-width: 1024px) {
+        .camera-viewport { aspect-ratio: 4/3; }
     }
     .video-preview, .image-preview { 
         width: 100%; 
@@ -1082,13 +1104,20 @@
             const loadingEl = document.getElementById('loading-text-content');
             if(loadingEl) loadingEl.textContent = "Memuat AI Wajah...";
             
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            ]);
+            // Attempt to load TinyFaceDetector first (Critical)
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            
+            // Attempt to load Landmark (Optional for basic, required for strict)
+            try {
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            } catch (landmarkError) {
+                console.warn("Landmark model missing, liveness check will be disabled.");
+            }
+
             isModelLoaded = true;
             console.log("Models loaded successfully");
         } catch (error) {
-            console.error("Error loading models:", error);
+            console.error("Error loading critical models:", error);
             const loadingEl = document.getElementById('loading-text-content');
             if(loadingEl) loadingEl.textContent = "Offline Mode (Tanpa AI)";
         }
@@ -1152,37 +1181,139 @@
         detectionInterval = setInterval(async () => {
             if (video.paused || video.ended) return;
 
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
-            const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
+            let detection = null;
+            
+            if (faceapi.nets.faceLandmark68Net.isLoaded) {
+                try {
+                    detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                } catch (e) {
+                    console.warn("Landmark detection error, falling back to simple detection", e);
+                }
+            }
+            
+            if (!detection) {
+                 const simpleDetections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+                 if(simpleDetections.length > 0) {
+                     detection = { detection: simpleDetections[0], landmarks: null };
+                 }
+            }
+            
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             if (useFrontCamera) {
-                ctx.save();
-                ctx.scale(-1, 1);
-                ctx.translate(-canvas.width, 0);
+                // ctx.save();
+                // ctx.scale(-1, 1);
+                // ctx.translate(-canvas.width, 0);
             }
             
-            faceapi.draw.drawDetections(canvas, resizedDetections);
-
             if (useFrontCamera) {
-                ctx.restore();
+                // ctx.restore();
             }
-
-            const snapBtn = document.getElementById('snap-btn');
             const faceDetectedInput = document.getElementById('face-detected-input');
             
-            if (detections.length > 0) {
-                snapBtn.style.borderColor = "#10b981";
-                snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
-                snapBtn.style.opacity = "1";
-                if(faceDetectedInput) faceDetectedInput.value = "true";
+            if (detection) {
+                const resizedDetections = faceapi.resizeResults(detection, displaySize);
+                faceapi.draw.drawDetections(canvas, resizedDetections);
+                
+                if (resizedDetections.landmarks) {
+                    const landmarks = resizedDetections.landmarks;
+                    const nose = landmarks.getNose()[0];
+                    const leftEye = landmarks.getLeftEye();
+                    const rightEye = landmarks.getRightEye();
+                    const jaw = landmarks.getJawOutline();
+                    
+                    const faceWidth = jaw[16].x - jaw[0].x;
+                    const noseRelX = (nose.x - jaw[0].x) / faceWidth;
+                    
+                    const getEAR = (eye) => {
+                        const v1 = Math.abs(eye[1].y - eye[5].y);
+                        const v2 = Math.abs(eye[2].y - eye[4].y);
+                        const h = Math.abs(eye[0].x - eye[3].x);
+                        return (v1 + v2) / (2.0 * h);
+                    };
+                    
+                    const avgEAR = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+                    
+                    if(!window.livenessState) window.livenessState = 0;
+                    
+                    let instruction = "";
+                    let color = "white";
+                    
+                    // User turns LEFT -> Image turns LEFT (visually) -> Actual Image RIGHT -> noseRelX Increases
+                    switch(window.livenessState) {
+                        case 0:
+                            instruction = "Lihat Lurus ke Kamera";
+                            if (noseRelX > 0.4 && noseRelX < 0.6) {
+                                setTimeout(() => { if(window.livenessState === 0) window.livenessState = 1; }, 1000);
+                            }
+                            break;
+                        case 1:
+                            instruction = "Tengok KIRI Pelan-pelan >>";
+                            if (noseRelX > 0.65) window.livenessState = 2;
+                            break;
+                        case 2:
+                            instruction = "<< Tengok KANAN Pelan-pelan";
+                            if (noseRelX < 0.35) window.livenessState = 3;
+                            break;
+                        case 3:
+                            instruction = "KEDIPKAN Mata Anda";
+                            if (avgEAR < 0.25) window.livenessState = 4;
+                            break;
+                        case 4:
+                            instruction = "VERIFIKASI BERHASIL!";
+                            color = "#10b981";
+                            if(faceDetectedInput) faceDetectedInput.value = "true";
+                            break;
+                    }
+                    
+                    // Restore context to draw text correctly (unmirrored text)
+                    if (useFrontCamera) ctx.restore(); 
+                    
+                    ctx.font = "900 24px 'Outfit', sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = 'black';
+                    ctx.strokeText(instruction, canvas.width/2, 50);
+                    ctx.fillStyle = color;
+                    ctx.fillText(instruction, canvas.width/2, 50);
+
+                    if (window.livenessState === 4) {
+                        snapBtn.style.borderColor = "#10b981"; 
+                        snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
+                        snapBtn.disabled = false;
+                    } else {
+                         snapBtn.style.borderColor = "#f59e0b";
+                         snapBtn.style.boxShadow = "none";
+                         if(faceDetectedInput) faceDetectedInput.value = "false";
+                    }
+                    
+                } else {
+                    // Fallback: Face found but no landmarks (Simple Mode)
+                    // This happens if model load failed or fallback triggered
+                    if (useFrontCamera) ctx.restore();
+                    
+                    // Draw Warning
+                    ctx.font = "bold 16px Arial";
+                    ctx.fillStyle = "yellow";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Model Liveness Tidak Lengkap", canvas.width/2, 30);
+                    
+                    // Allow simple detection
+                    snapBtn.style.borderColor = "#10b981";
+                    snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
+                    snapBtn.disabled = false;
+                    if(faceDetectedInput) faceDetectedInput.value = "true";
+                }
+
             } else {
+                // No face detected
+                if (useFrontCamera) ctx.restore();
+                
+                if(faceDetectedInput) faceDetectedInput.value = "false";
+                window.livenessState = 0; // Reset
                 snapBtn.style.borderColor = "#f59e0b";
                 snapBtn.style.boxShadow = "none";
-                snapBtn.style.opacity = "1";
-                if(faceDetectedInput) faceDetectedInput.value = "false";
             }
 
         }, 100);

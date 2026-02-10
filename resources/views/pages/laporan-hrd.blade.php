@@ -147,7 +147,7 @@
                         <td class="font-semibold">{{ $presence->user->name ?? 'N/A' }}</td>
                         <td><span class="unit-badge">{{ $presence->user->unit ?? '-' }}</span></td>
                         <td>
-                            <span class="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            <span class="text-sm font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">
                                 {{ $userAttendanceCounts[$presence->user_id] ?? 0 }} Hari
                             </span>
                         </td>
