@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ strtoupper($__env->yieldContent('title', $title ?? 'DASHBOARD')) }} | RS ASA BUNDA</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo/logo-title.svg') }}">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -20,7 +21,6 @@
             Alpine.store('theme', {
                 init() {
                     const savedTheme = localStorage.getItem('theme');
-                    // Force default to light if not saved
                     this.theme = savedTheme || 'light';
                     this.updateTheme();
                 },
