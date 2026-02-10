@@ -49,6 +49,7 @@
                     <label class="filter-label">Status Kehadiran</label>
                     <select name="status" x-model="selectedStatus" class="filter-input">
                         <option value="">Semua Status</option>
+                        <option value="pending">Menunggu Persetujuan</option>
                         <option value="hadir">Hadir</option>
                         <option value="terlambat">Terlambat</option>
                         <option value="tidak_hadir">Tidak Hadir</option>
@@ -170,7 +171,15 @@
                             @endif
                         </td>
                         <td>
-                            @if($presence->time_in)
+                            @if($presence->is_pending)
+                                <span class="status-badge pending">Perlu Approval</span>
+                                <form action="{{ route('hrd.approve', $presence->id) }}" method="POST" class="inline-block ml-2">
+                                    @csrf
+                                    <button type="submit" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onclick="return confirm('Setujui presensi ini?')">
+                                        Accept
+                                    </button>
+                                </form>
+                            @elseif($presence->time_in)
                                 <span class="status-badge {{ $presence->status === 'Terlambat' ? 'late' : 'present' }}">
                                     {{ $presence->status ?? 'Hadir' }}
                                 </span>
@@ -428,16 +437,36 @@
 
     .filter-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* Force 3 columns */
-        gap: 24px;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+        .filter-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .filter-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
     }
 
     .grid-span-unit {
         grid-column: span 1;
     }
 
-    .grid-span-employee {
-        grid-column: span 2; /* Make employee search wider for better UX */
+    @media (min-width: 768px) {
+        .grid-span-employee {
+            grid-column: span 2;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .grid-span-employee {
+            grid-column: span 2;
+        }
     }
 
     .filter-group {
@@ -474,6 +503,7 @@
         display: flex;
         gap: 12px;
         justify-content: flex-end;
+        flex-wrap: wrap; /* Ensure buttons wrap on small screens */
     }
 
     .btn-primary, .btn-secondary {
@@ -685,6 +715,12 @@
     .status-badge.absent {
         background: rgba(239, 68, 68, 0.1);
         color: var(--brand-red);
+    }
+    
+    .status-badge.pending {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--brand-yellow);
+        border: 1px solid var(--brand-yellow);
     }
 
     .note-cell {

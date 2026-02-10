@@ -29,11 +29,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/laporan-hrd', [PresenceController::class, 'hrdReport'])->name('hrd.report');
         Route::get('/laporan-hrd/export-excel', [PresenceController::class, 'exportExcel'])->name('hrd.export.excel');
         Route::get('/laporan-hrd/export-pdf', [PresenceController::class, 'exportPdf'])->name('hrd.export.pdf');
+        Route::post('/laporan-hrd/approve/{id}', [PresenceController::class, 'approve'])->name('hrd.approve');
         
         // User Management Routes
         Route::resource('users', App\Http\Controllers\UserController::class);
         
         // Unit Management Routes
         Route::resource('units', App\Http\Controllers\UnitController::class);
+        // Global Settings Routes
+        Route::get('/settings', [App\Http\Controllers\GlobalSettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [App\Http\Controllers\GlobalSettingController::class, 'update'])->name('settings.update');
     });
 });

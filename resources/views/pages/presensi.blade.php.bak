@@ -38,15 +38,6 @@
                 </div>
             @endif
 
-            @if(isset($settings['attendance_message']) && $settings['attendance_message'])
-                <div class="alert alert-info animate-fade-in">
-                    <div class="alert-icon">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5"/></svg>
-                    </div>
-                    <span class="alert-text">{{ $settings['attendance_message'] }}</span>
-                </div>
-            @endif
-
             <div class="welcome-header">
                 <h1 class="welcome-title">
                     Selamat {{ \Carbon\Carbon::now()->hour < 11 ? 'Pagi' : (\Carbon\Carbon::now()->hour < 15 ? 'Siang' : (\Carbon\Carbon::now()->hour < 18 ? 'Sore' : 'Malam')) }}, 
@@ -54,35 +45,6 @@
                 </h1>
                 <p class="welcome-subtitle">Silakan pilih aktivitas presensi Anda hari ini</p>
             </div>
-
-            @php
-                $externalLinks = isset($settings['external_links']) ? json_decode($settings['external_links'], true) : [];
-                // Fallback for old single link style if JSON is empty but old keys exist (though we deleted them, just in case)
-                if (empty($externalLinks) && isset($settings['external_link_url']) && !empty($settings['external_link_url'])) {
-                    $externalLinks[] = [
-                        'label' => $settings['external_link_label'] ?? 'Link Eksternal',
-                        'url' => $settings['external_link_url']
-                    ];
-                }
-            @endphp
-
-            @if(!empty($externalLinks))
-                <div class="external-links-container animate-fade-in mb-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full">
-                    @foreach($externalLinks as $link)
-                        @if(!empty($link['url']))
-                            <a href="{{ $link['url'] }}" target="_blank" class="btn-external w-full justify-between glass hover:bg-blue-50 dark:hover:bg-gray-800">
-                                <div class="flex items-center gap-3">
-                                    <div class="p-2 rounded-full bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                                    </div>
-                                    <span class="text-sm font-semibold external-link-label">{{ $link['label'] ?? 'Link Eksternal' }}</span>
-                                </div>
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            </a>
-                        @endif
-                    @endforeach
-                </div>
-            @endif
 
             <div class="choice-cards">
                 <div @click="if(!hasIn && {{ $isWorkingDay ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) { type = 'in'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
@@ -148,8 +110,6 @@
                 </div>
             </div>
 
-
-
             @if($presence)
             <div class="summary-container animate-slide-up">
                 <div class="summary-divider">
@@ -204,13 +164,12 @@
 
                         <div class="camera-viewport">
                             <video id="webcam" autoplay playsinline class="video-preview"></video>
-                            <canvas id="overlay" class="overlay-canvas"></canvas>
                             <img id="photo-preview" class="image-preview hidden">
                             <canvas id="canvas" class="hidden"></canvas>
                             
                             <div id="camera-status" class="overlay-loading">
                                 <div class="spinner"></div>
-                                <p class="loading-text" id="loading-text-content">Inisialisasi Sensor...</p>
+                                <p class="loading-text">Inisialisasi Sensor...</p>
                             </div>
 
                             <div id="snap-overlay" class="snap-action-wrapper">
@@ -253,7 +212,6 @@
                             
                             <input type="hidden" name="location" id="location-input">
                             <input type="hidden" name="image" id="image-input">
-                            <input type="hidden" name="is_face_detected" id="face-detected-input" value="false">
 
                             <button type="submit" id="submit-btn" disabled class="btn-submit">
                                 <span id="submit-text">Ambil Foto Verifikasi</span>
@@ -276,9 +234,7 @@
 
 @push('scripts')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <style>
     :root {
@@ -287,6 +243,7 @@
         --brand-orange: #f97316;
         --brand-emerald: #10b981;
         
+        /* Light mode colors */
         --text-main: #1e293b;
         --text-secondary: #64748b;
         --text-tertiary: #94a3b8;
@@ -301,6 +258,7 @@
     }
 
     .dark {
+        /* Dark mode colors */
         --text-main: #f8fafc;
         --text-secondary: #94a3b8;
         --text-tertiary: #64748b;
@@ -322,6 +280,7 @@
         position: relative;
     }
 
+    /* Choice Screen */
     .choice-screen {
         display: flex;
         flex-direction: column;
@@ -389,37 +348,19 @@
         cursor: pointer;
         backdrop-filter: blur(15px);
     }
-    
-    .dark .presence-card {
-        background: rgba(30, 41, 59, 0.5);
-        border-color: rgba(255, 255, 255, 0.05);
-    }
 
     .card-entry:hover {
         transform: translateY(-10px) scale(1.02);
         background: var(--hover-bg);
-    }
-    
-    .dark .card-entry:hover {
-        background: rgba(255, 255, 255, 0.05);
     }
 
     .card-blue:hover { 
         border-color: var(--brand-blue); 
         box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2); 
     }
-    .dark .card-blue:hover {
-        border-color: #60a5fa;
-        box-shadow: 0 20px 40px rgba(96, 165, 250, 0.15);
-    }
-
     .card-orange:hover { 
         border-color: var(--brand-orange); 
         box-shadow: 0 20px 40px rgba(249, 115, 22, 0.2); 
-    }
-    .dark .card-orange:hover {
-        border-color: #fb923c;
-        box-shadow: 0 20px 40px rgba(251, 146, 60, 0.15);
     }
 
     .card-icon-wrapper {
@@ -479,6 +420,7 @@
     .badge-green { background: var(--brand-emerald); }
     .badge-orange { background: var(--brand-orange); }
 
+    /* Summary Bar */
     .summary-container { margin-top: 80px; width: 100%; max-width: 600px; }
     .summary-divider { 
         display: flex; 
@@ -524,6 +466,7 @@
         color: var(--text-main);
     }
 
+    /* Form Step */
     .form-screen { width: 100%; }
     .form-header { 
         display: flex; 
@@ -636,15 +579,6 @@
         height: 100%; 
         object-fit: cover; 
     }
-    .overlay-canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 2;
-        pointer-events: none;
-    }
     
     .overlay-loading {
         position: absolute; inset: 0;
@@ -725,6 +659,7 @@
         letter-spacing: 1px; 
     }
 
+    /* Right Column */
     .clock-card {
         background: linear-gradient(135deg, var(--brand-blue), #1e40af);
         border-radius: 40px;
@@ -796,12 +731,6 @@
         cursor: not-allowed;
         transition: all 0.4s;
     }
-    .dark .btn-submit:disabled {
-        background: #334155;
-        color: #64748b;
-        border-color: #475569;
-    }
-    
     .btn-submit:not(:disabled) {
         background: var(--brand-blue);
         color: white;
@@ -841,6 +770,7 @@
     .text-orange { color: var(--brand-orange); }
     .text-white { color: white; }
 
+    /* Animations */
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     @keyframes slide-right { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
@@ -854,6 +784,7 @@
     .animate-bounce { animation: bounce 0.5s ease-out; }
     .animate-pulse { animation: pulse 2s ease-in-out infinite; }
 
+    /* Responsive */
     @media (max-width: 900px) {
         .presence-container { padding: 30px 15px; }
         
@@ -980,212 +911,30 @@
             font-size: 10px;
         }
     }
-    .btn-emergency {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 24px;
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--brand-red);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        border-radius: 12px;
-        font-weight: 700;
-        text-decoration: none;
-        transition: all 0.3s;
-    }
-
-    .btn-emergency:hover {
-        background: var(--brand-red);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
-
-    .btn-external {
-        display: inline-flex;
-        align-items: center;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 16px;
-        background: var(--card-bg);
-        border: 1px solid var(--glass-border);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        text-decoration: none;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-    }
-
-    .dark .btn-external {
-        background: rgba(30, 41, 59, 0.7);
-        border-color: rgba(255, 255, 255, 0.05);
-    }
-
-    .btn-external:hover {
-        transform: translateY(-2px);
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.08);
-        border-color: var(--brand-blue);
-    }
-    
-    .dark .btn-external:hover {
-        background: rgba(30, 41, 59, 0.9);
-        border-color: #60a5fa;
-    }
-    
-    .external-link-label {
-        color: var(--text-main);
-    }
-
-    .alert-info {
-        background: rgba(59, 130, 246, 0.1);
-        border-left: 4px solid #3b82f6;
-    }
-    
-    .alert-info .alert-icon {
-        color: #3b82f6;
-    }
-    
-    .dark .alert-info {
-        background: rgba(59, 130, 246, 0.15);
-        border-left: 4px solid #60a5fa;
-        border-right: 1px solid rgba(59, 130, 246, 0.2);
-        border-top: 1px solid rgba(59, 130, 246, 0.2);
-        border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-    }
-    
-    .dark .alert-info .alert-icon {
-        color: #60a5fa;
-    }
-    
-    .dark .alert-info .alert-text {
-        color: #e2e8f0;
-    }
 </style>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-    const OFFICE_LOCATION = "{{ $settings['office_location'] ?? '' }}"; // Format: "-7.123, 108.123"
-    const OFFICE_RADIUS = {{ $settings['office_radius'] ?? 500 }}; // Meters
-    let isLocationInRange = false;
-
     let currentStream = null;
     let map = null, marker = null;
     let useFrontCamera = true;
-    let isModelLoaded = false;
-    let detectionInterval = null;
 
-    const loadModels = async () => {
-        const MODEL_URL = '{{ asset("models") }}';
-        try {
-            const loadingEl = document.getElementById('loading-text-content');
-            if(loadingEl) loadingEl.textContent = "Memuat AI Wajah...";
-            
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            ]);
-            isModelLoaded = true;
-            console.log("Models loaded successfully");
-        } catch (error) {
-            console.error("Error loading models:", error);
-            const loadingEl = document.getElementById('loading-text-content');
-            if(loadingEl) loadingEl.textContent = "Offline Mode (Tanpa AI)";
-        }
-    };
-
-    document.addEventListener('DOMContentLoaded', () => {
-        loadModels();
-    });
-
+    // Camera Logic
     window.startCamera = async () => {
         const webcam = document.getElementById('webcam');
         const camStatus = document.getElementById('camera-status');
-        const loadingText = document.getElementById('loading-text-content');
         if(!webcam) return;
 
-        if (currentStream) {
-            currentStream.getTracks().forEach(t => t.stop());
-            if(detectionInterval) clearInterval(detectionInterval);
-        }
-
+        if (currentStream) currentStream.getTracks().forEach(t => t.stop());
         try {
             camStatus.style.display = 'flex';
-            loadingText.textContent = "Mengakses Kamera...";
-            
-            if (!isModelLoaded) {
-                 loadingText.textContent = "Menunggu AI...";
-                 await new Promise(resolve => {
-                     const check = setInterval(() => {
-                         if(isModelLoaded) { clearInterval(check); resolve(); }
-                     }, 100);
-                 });
-            }
-
             currentStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 640 }, height: { ideal: 480 } }
+                video: { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
             });
             webcam.srcObject = currentStream;
-            
-            webcam.onloadedmetadata = () => {
-                camStatus.style.display = 'none';
-                startFaceDetection();
-            };
+            camStatus.style.display = 'none';
         } catch (e) {
-            console.error(e);
             camStatus.innerHTML = '<div style="text-align: center; color: #f44;"><p>AKSES KAMERA DITOLAK</p></div>';
         }
-    };
-
-    const startFaceDetection = () => {
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('overlay');
-        const submitBtn = document.getElementById('submit-btn');
-
-        if (!video || !canvas) return;
-
-        const displaySize = { width: video.videoWidth, height: video.videoHeight };
-        faceapi.matchDimensions(canvas, displaySize);
-
-        if(detectionInterval) clearInterval(detectionInterval);
-
-        detectionInterval = setInterval(async () => {
-            if (video.paused || video.ended) return;
-
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
-            const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (useFrontCamera) {
-                ctx.save();
-                ctx.scale(-1, 1);
-                ctx.translate(-canvas.width, 0);
-            }
-            
-            faceapi.draw.drawDetections(canvas, resizedDetections);
-
-            if (useFrontCamera) {
-                ctx.restore();
-            }
-
-            const snapBtn = document.getElementById('snap-btn');
-            const faceDetectedInput = document.getElementById('face-detected-input');
-            
-            if (detections.length > 0) {
-                snapBtn.style.borderColor = "#10b981";
-                snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
-                snapBtn.style.opacity = "1";
-                if(faceDetectedInput) faceDetectedInput.value = "true";
-            } else {
-                snapBtn.style.borderColor = "#f59e0b";
-                snapBtn.style.boxShadow = "none";
-                snapBtn.style.opacity = "1";
-                if(faceDetectedInput) faceDetectedInput.value = "false";
-            }
-
-        }, 100);
     };
 
     window.toggleCamera = () => {
@@ -1193,21 +942,7 @@
         window.startCamera();
     };
 
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3;
-        const φ1 = lat1 * Math.PI/180;
-        const φ2 = lat2 * Math.PI/180;
-        const Δφ = (lat2-lat1) * Math.PI/180;
-        const Δλ = (lon2-lon1) * Math.PI/180;
-
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-        return R * c;
-    }
-
+    // Location Logic
     window.getLocation = () => {
         const dot = document.getElementById('loc-dot');
         const text = document.getElementById('loc-text');
@@ -1219,67 +954,13 @@
         navigator.geolocation.getCurrentPosition(pos => {
             const { latitude, longitude, accuracy } = pos.coords;
             document.getElementById('location-input').value = `${latitude}, ${longitude}`;
-            
-            let distance = 0;
-            let statusText = "";
-            let inRange = false;
-            
-            if(OFFICE_LOCATION) {
-                try {
-                    const parts = OFFICE_LOCATION.split(',').map(n => parseFloat(n.trim()));
-                    const offLat = parts[0];
-                    const offLng = parts[1];
-                    
-                    if(!isNaN(offLat) && !isNaN(offLng)) {
-                        distance = calculateDistance(latitude, longitude, offLat, offLng);
-                        
-                        if(distance <= OFFICE_RADIUS) {
-                            inRange = true;
-                            statusText = `DALAM JANGKAUAN (${distance.toFixed(0)}m)`;
-                        } else {
-                            inRange = false;
-                            statusText = `DI LUAR JANGKAUAN (${distance.toFixed(0)}m)`;
-                        }
-                    } else {
-                        inRange = true; 
-                        statusText = "LOKASI KANTOR BELUM DISET";
-                    }
-                } catch(e) {
-                    console.error(e);
-                    inRange = true; 
-                    statusText = "ERROR KONFIGURASI LOKASI";
-                }
-            } else {
-                inRange = true;
-                statusText = "SKIP LOKASI (DEV MOOE)";
-            }
-            
-            isLocationInRange = inRange;
-            text.textContent = statusText;
-
-            if(inRange) {
-                dot.className = 'dot-green';
-            } else {
-                dot.className = 'dot-red animate-pulse';
-            }
+            dot.className = 'dot-green';
+            text.textContent = `AKURASI: ${accuracy.toFixed(0)}m (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
             
             if(!map) {
                 map = L.map('map', { zoomControl: false }).setView([latitude, longitude], 17);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                 marker = L.marker([latitude, longitude]).addTo(map);
-                
-                if(OFFICE_LOCATION) {
-                     const parts = OFFICE_LOCATION.split(',').map(n => parseFloat(n.trim()));
-                     if(parts.length === 2 && !isNaN(parts[0])) {
-                         L.circle(parts, {
-                            color: '#3b82f6',
-                            fillColor: '#3b82f6',
-                            fillOpacity: 0.1,
-                            radius: OFFICE_RADIUS
-                        }).addTo(map);
-                     }
-                }
-
                 setTimeout(() => map.invalidateSize(), 800);
             } else {
                 map.setView([latitude, longitude]);
@@ -1287,41 +968,15 @@
                 map.invalidateSize();
             }
         }, err => {
-            text.textContent = "GPS GAGAL: " + err.message;
+            text.textContent = "GPS GAGAL: AKTIFKAN LOKASI";
             dot.className = 'dot-orange';
-            isLocationInRange = false;
         }, { enableHighAccuracy: true });
     };
 
+    // Event Listeners
     document.addEventListener('click', (e) => {
         const snapBtn = e.target.closest('#snap-btn');
         if(snapBtn) {
-            const faceDetectedInput = document.getElementById('face-detected-input');
-            const isFaceDetected = faceDetectedInput && faceDetectedInput.value === "true";
-            
-            if (!isFaceDetected) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Wajah Tidak Terdeteksi',
-                    text: 'Pastikan wajah Anda terlihat jelas dalam kamera!',
-                    confirmButtonColor: '#3b82f6'
-                });
-                return;
-            }
-
-        
-            const locText = document.getElementById('loc-text').textContent;
-            
-            if (!isLocationInRange) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lokasi Tidak Valid',
-                    text: 'Anda berada di luar jangkauan kantor! ' + locText,
-                    confirmButtonColor: '#ef4444'
-                });
-                return;
-            }
-            
             const webcam = document.getElementById('webcam');
             const canvas = document.getElementById('canvas');
             const preview = document.getElementById('photo-preview');
@@ -1333,23 +988,16 @@
             canvas.width = webcam.videoWidth;
             canvas.height = webcam.videoHeight;
             const ctx = canvas.getContext('2d');
-            
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            
-            ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
-            
+            if(useFrontCamera) {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+            ctx.drawImage(webcam, 0, 0);
             const data = canvas.toDataURL('image/jpeg', 0.85);
-
-            if(window.detectionInterval) clearInterval(window.detectionInterval);
-            
             preview.src = data;
             preview.classList.remove('hidden');
-            
             webcam.classList.add('hidden');
-            document.getElementById('overlay').classList.add('hidden'); 
             snapOverlay.classList.add('hidden');
-            
             retakeBtn.classList.remove('hidden');
             imageInput.value = data;
             
@@ -1358,29 +1006,20 @@
         }
 
         if(e.target.closest('#retake-photo')) {
-            const preview = document.getElementById('photo-preview');
-            const webcam = document.getElementById('webcam');
-            const overlay = document.getElementById('overlay');
-            const snapOverlay = document.getElementById('snap-overlay');
-            const retakeBtn = document.getElementById('retake-photo');
-            
-            preview.classList.add('hidden');
-            webcam.classList.remove('hidden');
-            overlay.classList.remove('hidden');
-            snapOverlay.classList.remove('hidden');
-            retakeBtn.classList.add('hidden');
-            
-            if(typeof startFaceDetection === 'function') startFaceDetection();
-            
+            document.getElementById('photo-preview').classList.add('hidden');
+            document.getElementById('webcam').classList.remove('hidden');
+            document.getElementById('snap-overlay').classList.remove('hidden');
+            document.getElementById('retake-photo').classList.add('hidden');
             document.getElementById('submit-btn').disabled = true;
             document.getElementById('submit-text').textContent = 'Ambil Foto Verifikasi';
         }
 
         if(e.target.closest('#refresh-location')) {
-            if(typeof getLocation === 'function') getLocation();
+            window.getLocation();
         }
     });
 
+    // Clock
     setInterval(() => {
         const el = document.getElementById('live-clock');
         if(el) {

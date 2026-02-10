@@ -83,9 +83,11 @@ class PresenceController extends Controller
                 $activeShiftInfo['is_too_early'] = $now->lt((clone $activeShiftInfo['start_time'])->subMinutes(60));
             }
         }
+        
+        $settings = \App\Models\GlobalSetting::all()->pluck('value', 'key');
 
         $selectedType = $request->query('type');
-        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo'));
+        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings'));
     }
 
     public function store(Request $request)
@@ -178,6 +180,8 @@ class PresenceController extends Controller
             }
 
             $imagePath = $this->handleImageUpload($request->image, $userId, 'in');
+            
+            $isFaceDetected = $request->input('is_face_detected') === 'true';
 
             Presence::create([
                 'user_id' => $userId,
@@ -188,8 +192,11 @@ class PresenceController extends Controller
                 'location_in' => $request->location,
                 'image_in' => $imagePath,
                 'note' => $request->note,
+                'is_face_detected' => $isFaceDetected,
+                'is_pending' => !$isFaceDetected,
             ]);
-            $msg = 'Berhasil Absen Masuk';
+            
+            $msg = $isFaceDetected ? 'Berhasil Absen Masuk' : 'Absen Masuk Berhasil (Menunggu Verifikasi Wajah)';
         } 
         // 3. Handle Clock Out
         else {
@@ -204,13 +211,31 @@ class PresenceController extends Controller
             }
 
             $imagePath = $this->handleImageUpload($request->image, $userId, 'out');
+            
+            $isFaceDetected = $request->input('is_face_detected') === 'true';
 
             $presence->update([
                 'time_out' => $now->toTimeString(),
                 'location_out' => $request->location,
                 'image_out' => $imagePath,
                 'note' => $request->note,
+                // Only update pending status if it's clock out and face not detected. 
+                // If it was already pending from IN, it stays pending? 
+                // Let's assume ANY missing face makes it pending.
+                'is_pending' => $presence->is_pending || !$isFaceDetected, // If already pending, stay pending. If new invalid face, become pending.
+                'is_face_detected' => $presence->is_face_detected && $isFaceDetected, // Tracking overall valid session? Or strictly per action? 
+                // Actually simplicity: Update 'is_pending' if current action fails face check.
             ]);
+            
+            // Logic: If check-in had face (valid) but check-out no face (invalid) -> becomes pending.
+            // If check-in no face (pending) and check-out has face -> Should it clear pending?
+            // "nanti hrd bisa accept" -> implies manual intervention. So automatic clearing might be risky.
+            // Let's force Pending if THIS action fails face check.
+            if (!$isFaceDetected) {
+                $presence->update(['is_pending' => true]);
+            }
+
+            $msg = $isFaceDetected ? 'Berhasil Absen Keluar' : 'Absen Keluar Berhasil (Menunggu Verifikasi Wajah)';
             $msg = 'Berhasil Absen Keluar';
         }
 
@@ -282,10 +307,13 @@ class PresenceController extends Controller
         if ($request->filled('status')) {
             switch ($request->status) {
                 case 'hadir':
-                    $query->whereNotNull('time_in')->where('status', 'Hadir');
+                    $query->whereNotNull('time_in')->where('status', 'Hadir')->where('is_pending', false);
                     break;
                 case 'terlambat':
-                    $query->where('status', 'Terlambat');
+                    $query->where('status', 'Terlambat')->where('is_pending', false);
+                    break;
+                case 'pending':
+                    $query->where('is_pending', true);
                     break;
                 case 'tidak_hadir':
                     break;
@@ -323,7 +351,9 @@ class PresenceController extends Controller
         $units = \App\Models\Unit::orderBy('name')->pluck('name');
         $users = \App\Models\User::orderBy('name')->get(['id', 'name', 'nip']);
         
-        return view('pages.laporan-hrd', compact('presences', 'units', 'users', 'totalAttendance', 'userAttendanceCounts'));
+        $globalPendingCount = Presence::where('is_pending', true)->count();
+        
+        return view('pages.laporan-hrd', compact('presences', 'units', 'users', 'totalAttendance', 'userAttendanceCounts', 'globalPendingCount'));
     }
 
     public function exportExcel(Request $request)
@@ -341,5 +371,12 @@ class PresenceController extends Controller
     public function exportPdf(Request $request)
     {
         return back()->with('error', 'Export PDF belum diimplementasikan');
+    }
+
+    public function approve($id)
+    {
+        $presence = Presence::findOrFail($id);
+        $presence->update(['is_pending' => false]);
+        return back()->with('success', 'Presensi berhasil disetujui.');
     }
 }
