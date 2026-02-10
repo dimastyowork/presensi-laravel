@@ -48,6 +48,7 @@
             @endif
 
             <div class="welcome-header">
+                <img src="{{ asset('images/logo/logo-title.svg') }}" alt="RS Asa Bunda" class="h-12 mb-4">
                 <h1 class="welcome-title">
                     Selamat {{ \Carbon\Carbon::now()->hour < 11 ? 'Pagi' : (\Carbon\Carbon::now()->hour < 15 ? 'Siang' : (\Carbon\Carbon::now()->hour < 18 ? 'Sore' : 'Malam')) }}, 
                     <span class="text-brand">{{ explode(' ', Auth::user()->name)[0] }}</span>!
