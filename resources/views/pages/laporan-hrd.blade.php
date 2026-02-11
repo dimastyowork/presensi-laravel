@@ -15,7 +15,6 @@
     endDate: '{{ request('end_date', \Carbon\Carbon::now()->format('Y-m-d')) }}'
 }">
     
-    <!-- Header -->
     <div class="report-header">
         <div>
             <h1 class="page-title">Laporan <span class="text-brand">Kehadiran</span></h1>
@@ -57,7 +56,6 @@
                     </select>
                 </div>
 
-                <!-- Unit & Employee -->
                 <div class="filter-group grid-span-unit">
                     <label class="filter-label">Unit/Departemen</label>
                     <select name="unit" x-model="selectedUnit" class="filter-input">
@@ -98,13 +96,9 @@
         </form>
     </div>
 
-    <!-- Export Buttons -->
     <div class="export-section">
         <div class="export-info flex gap-4">
             <span class="result-count">{{ $presences->total() }} Data Ditemukan</span>
-            <span class="total-attendance px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold">
-                Total Kehadiran: {{ $totalAttendance }} Hari
-            </span>
         </div>
         <div class="export-buttons">
             <a href="{{ route('hrd.export.excel', request()->query()) }}" class="btn-export excel">
@@ -122,7 +116,6 @@
         </div>
     </div>
 
-    <!-- Data Table -->
     <div class="table-container glass">
         <div class="table-wrapper">
             <table class="data-table">
@@ -138,14 +131,28 @@
                         <th>Jam Keluar</th>
                         <th>Status</th>
                         <th>Keterangan</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($presences as $index => $presence)
                     <tr>
                         <td>{{ $presences->firstItem() + $index }}</td>
-                        <td>{{ \Carbon\Carbon::parse($presence->date)->isoFormat('D MMM Y') }}</td>
-                        <td class="font-semibold">{{ $presence->user->name ?? 'N/A' }}</td>
+                        <td>
+                            <a href="{{ request()->fullUrlWithQuery(['start_date' => $presence->date, 'end_date' => $presence->date, 'page' => null]) }}" 
+                               class="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+                               title="Lihat Laporan Harian Tanggal Ini">
+                                {{ \Carbon\Carbon::parse($presence->date)->isoFormat('D MMM Y') }}
+                            </a>
+                        </td>
+                        <td class="font-semibold">
+                            <a href="{{ request()->fullUrlWithQuery(['user_id' => $presence->user_id, 'page' => null]) }}" 
+                               class="text-gray-900 dark:text-gray-100 hover:text-blue-600 hover:underline transition-colors flex items-center gap-1"
+                               title="Filter berdasar User ini">
+                                {{ $presence->user->name ?? 'N/A' }}
+                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                            </a>
+                        </td>
                         <td><span class="unit-badge">{{ $presence->user->unit ?? '-' }}</span></td>
                         <td>
                             <span class="text-sm font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">
@@ -189,10 +196,20 @@
                             @endif
                         </td>
                         <td class="note-cell">{{ $presence->note ?? '-' }}</td>
+                        <td>
+                            <a href="{{ route('hrd.detail', $presence->id) }}" 
+                               class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-1 transition-colors duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Detail
+                            </a>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="empty-state">
+                        <td colspan="11" class="empty-state">
                             <div class="empty-content">
                                 <div class="empty-icon">
                                     <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,7 +226,6 @@
             </table>
         </div>
 
-        <!-- Footer: Pagination & Per Page -->
         <div class="table-footer glass">
             <div class="per-page-footer">
                 <form action="{{ route('hrd.report') }}" method="GET" id="perPageFormHrd">
@@ -231,6 +247,174 @@
                 {{ $presences->links() }}
             </div>
             @endif
+        </div>
+    </div>
+    <div x-show="showDetailModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showDetailModal" 
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" 
+                 @click="showDetailModal = false"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="showDetailModal" 
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-gray-800 rounded-2xl shadow-xl sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full sm:p-6">
+                
+                <div class="absolute top-0 right-0 pt-4 pr-4">
+                    <button @click="showDetailModal = false" type="button" class="text-gray-400 bg-white dark:bg-gray-800 rounded-md hover:text-gray-500 focus:outline-none">
+                        <span class="sr-only">Close</span>
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <template x-if="selectedPresence">
+                    <div>
+                        <div class="w-full mt-3 text-center sm:mt-0 sm:text-left">
+                            <h3 class="text-2xl leading-6 font-bold text-gray-900 dark:text-white mb-6" id="modal-title">
+                                Detail Kehadiran
+                            </h3>
+                            
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-6 flex items-center gap-4">
+                                <div class="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xl">
+                                    <span x-text="selectedPresence.user ? selectedPresence.user.name.charAt(0) : '?'"></span>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-bold text-gray-900 dark:text-white" x-text="selectedPresence.user ? selectedPresence.user.name : 'Unknown User'"></h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400" x-text="(selectedPresence.user ? selectedPresence.user.unit : '-') + ' • ' + (selectedPresence.user ? selectedPresence.user.nip : '-')"></p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Tanggal</label>
+                                        <p class="text-base font-medium text-gray-900 dark:text-white" x-text="formatDate(selectedPresence.date)"></p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Shift</label>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800" x-text="selectedPresence.shift_name || '-'"></span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                                            :class="{
+                                                'bg-green-100 text-green-800': selectedPresence.status === 'Hadir' || !selectedPresence.status,
+                                                'bg-yellow-100 text-yellow-800': selectedPresence.status === 'Terlambat',
+                                                'bg-red-100 text-red-800': selectedPresence.status === 'Tidak Hadir'
+                                            }" 
+                                            x-text="selectedPresence.status || 'Hadir'">
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Masuk</label>
+                                            <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="formatTime(selectedPresence.time_in)"></p>
+                                            <a :href="getMapsUrl(selectedPresence.location_in)" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1" x-show="selectedPresence.location_in">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                Lokasi
+                                            </a>
+                                        </div>
+                                        <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Keluar</label>
+                                            <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="formatTime(selectedPresence.time_out)"></p>
+                                            <a :href="getMapsUrl(selectedPresence.location_out)" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1" x-show="selectedPresence.location_out">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                Lokasi
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div x-show="selectedPresence.note" class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Catatan</label>
+                                <p class="text-gray-700 dark:text-gray-300 text-sm italic" x-text="selectedPresence.note"></p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto Masuk</label>
+                                    <div class="relative aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm group">
+                                        <div x-show="selectedPresence.image_in">
+                                            <img :src="getImageUrl(selectedPresence.image_in)" 
+                                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                                alt="Foto Masuk">
+                                        </div>
+                                        <div x-show="!selectedPresence.image_in" class="flex items-center justify-center h-full text-gray-400">
+                                            <span class="text-sm">Tidak ada foto</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto Keluar</label>
+                                    <div class="relative aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm group">
+                                        <div x-show="selectedPresence.image_out">
+                                            <img :src="getImageUrl(selectedPresence.image_out)" 
+                                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                                alt="Foto Keluar">
+                                        </div>
+                                        <div x-show="!selectedPresence.image_out" class="flex items-center justify-center h-full text-gray-400">
+                                            <span class="text-sm">Tidak ada foto</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700 grid grid-cols-2 gap-4">
+                            <a :href="'{{ route('hrd.report') }}?user_id=' + selectedPresence.user_id"
+                               class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium border border-transparent hover:border-gray-200 dark:hover:border-gray-600">
+                               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                               Riwayat User
+                            </a>
+                            <a :href="'{{ route('hrd.report') }}?start_date=' + selectedPresence.date + '&end_date=' + selectedPresence.date"
+                               class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium border border-transparent hover:border-gray-200 dark:hover:border-gray-600">
+                               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                               Laporan Harian
+                            </a>
+                        </div>
+                        
+                        <div class="mt-8 sm:mt-8 sm:flex sm:flex-row-reverse" x-show="selectedPresence">
+                            <button type="button" 
+                                    class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-all shadow-blue-500/30" 
+                                    @click="showDetailModal = false">
+                                Tutup
+                            </button>
+                            
+                            <template x-if="selectedPresence && selectedPresence.is_pending">
+                                <div class="w-full sm:w-auto mt-3 sm:mt-0">
+                                     <form :action="'/laporan-hrd/approve/' + selectedPresence.id" method="POST">
+                                        @csrf
+                                        <button type="submit" 
+                                                onclick="return confirm('Setujui presensi ini?')"
+                                                class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm transition-all shadow-green-500/30">
+                                            Approve Presensi
+                                        </button>
+                                    </form>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 </div>
@@ -800,7 +984,7 @@
         padding: 8px 16px;
         background: var(--hover-bg);
         border: 1px solid var(--card-border);
-        border-radius: 10px;
+        border-radius: 8px;
         color: var(--text-main);
         font-weight: 600;
         cursor: pointer;
@@ -809,7 +993,6 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 12px center;
-        background-size: 16px;
         padding-right: 40px;
     }
 

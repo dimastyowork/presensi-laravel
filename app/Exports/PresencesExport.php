@@ -88,11 +88,6 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
 
     public function map($presence): array
     {
-        // Reset counter static variable needed if export called multiple times in same request
-        // But for static var inside method, it persists. 
-        // Better to use index from collection mapping if possible, but map() receives single item.
-        // We will just let it increment. For cleaner implementation, use a class property.
-        
         $this->rowNumber = ($this->rowNumber ?? 0) + 1;
         
         $status = 'Tidak Hadir';

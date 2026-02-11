@@ -28,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/laporan-hrd', [PresenceController::class, 'hrdReport'])->name('hrd.report');
         Route::get('/laporan-hrd/export-excel', [PresenceController::class, 'exportExcel'])->name('hrd.export.excel');
         Route::get('/laporan-hrd/export-pdf', [PresenceController::class, 'exportPdf'])->name('hrd.export.pdf');
+        Route::get('/laporan-hrd/{presence}', [PresenceController::class, 'showDetail'])->name('hrd.detail');
         Route::post('/laporan-hrd/approve/{id}', [PresenceController::class, 'approve'])->name('hrd.approve');
         
         Route::resource('users', App\Http\Controllers\UserController::class);

@@ -392,4 +392,27 @@ class PresenceController extends Controller
         $presence->update(['is_pending' => false]);
         return back()->with('success', 'Presensi berhasil disetujui.');
     }
+
+    public function showDetail(Presence $presence)
+    {
+        $prevPresence = Presence::where('user_id', $presence->user_id)
+            ->where('date', '<', $presence->date)
+            ->orderBy('date', 'desc')
+            ->first();
+
+        $nextPresence = Presence::where('user_id', $presence->user_id)
+            ->where('date', '>', $presence->date)
+            ->orderBy('date', 'asc')
+            ->first();
+
+        // Get data for mini calendar (current month)
+        $currentDate = Carbon::parse($presence->date);
+        $monthlyPresences = Presence::where('user_id', $presence->user_id)
+            ->whereYear('date', $currentDate->year)
+            ->whereMonth('date', $currentDate->month)
+            ->get(['id', 'date', 'status', 'time_in', 'time_out'])
+            ->keyBy('date');
+
+        return view('pages.laporan-detail', compact('presence', 'prevPresence', 'nextPresence', 'monthlyPresences'));
+    }
 }
