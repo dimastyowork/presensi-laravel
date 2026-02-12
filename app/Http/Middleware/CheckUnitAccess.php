@@ -17,7 +17,7 @@ class CheckUnitAccess
     {
         $user = auth()->user();
 
-        if (!$user || !in_array($user->unit, ['IT', 'HRD'])) {
+        if (!$user || !in_array($user->unit, ['IT', 'HRD', 'SDM', 'SDM & DIKLAT'])) {
             abort(403, 'Anda tidak memiliki hak akses ke halaman ini.');
         }
 

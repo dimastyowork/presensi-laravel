@@ -354,6 +354,13 @@ class PresenceController extends Controller
             ->groupBy('user_id')
             ->pluck('total', 'user_id');
 
+        // Hitung total keterlambatan per user
+        $userLatenessCounts = (clone $query)
+            ->where('status', 'Terlambat')
+            ->select('user_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
         $perPage = $request->input('per_page', 10);
 
         $presences = $query->orderBy('date', 'desc')
@@ -366,7 +373,7 @@ class PresenceController extends Controller
         
         $globalPendingCount = Presence::where('is_pending', true)->count();
         
-        return view('pages.laporan-hrd', compact('presences', 'units', 'users', 'totalAttendance', 'userAttendanceCounts', 'globalPendingCount'));
+        return view('pages.laporan-hrd', compact('presences', 'units', 'users', 'totalAttendance', 'userAttendanceCounts', 'userLatenessCounts', 'globalPendingCount'));
     }
 
     public function exportExcel(Request $request)

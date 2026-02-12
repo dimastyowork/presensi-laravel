@@ -51,7 +51,7 @@
             <div class="welcome-header">
                 <h1 class="welcome-title">
                     Selamat {{ \Carbon\Carbon::now()->hour < 11 ? 'Pagi' : (\Carbon\Carbon::now()->hour < 15 ? 'Siang' : (\Carbon\Carbon::now()->hour < 18 ? 'Sore' : 'Malam')) }}, 
-                    <span class="text-brand">{{ explode(' ', Auth::user()->name)[0] }}</span>!
+                    <span class="text-brand">{{ \App\Helpers\NameHelper::getFirstName(Auth::user()->name) }}</span>!
                 </h1>
                 <p class="welcome-subtitle">Silakan pilih aktivitas presensi Anda hari ini</p>
             </div>

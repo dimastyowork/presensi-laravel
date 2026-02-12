@@ -30,11 +30,9 @@
         </div>
     </div>
 
-    <!-- Filter Section -->
     <div x-show="showFilters" x-transition class="filter-section glass">
         <form method="GET" action="{{ route('hrd.report') }}" class="filter-form">
             <div class="filter-grid">
-                <!-- Date Range & Status -->
                 <div class="filter-group">
                     <label class="filter-label">Tanggal Mulai</label>
                     <input type="date" name="start_date" x-model="startDate" class="filter-input">
@@ -126,6 +124,7 @@
                         <th>Nama</th>
                         <th>Unit</th>
                         <th>Total Hadir</th>
+                        <th>Total Terlambat</th>
                         <th>Shift</th>
                         <th>Jam Masuk</th>
                         <th>Jam Keluar</th>
@@ -157,6 +156,11 @@
                         <td>
                             <span class="text-sm font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">
                                 {{ $userAttendanceCounts[$presence->user_id] ?? 0 }} Hari
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-sm font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded">
+                                {{ $userLatenessCounts[$presence->user_id] ?? 0 }} Hari
                             </span>
                         </td>
                         <td><span class="shift-name-badge">{{ $presence->shift_name ?? '-' }}</span></td>
@@ -209,7 +213,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="empty-state">
+                        <td colspan="12" class="empty-state">
                             <div class="empty-content">
                                 <div class="empty-icon">
                                     <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,6 +454,9 @@
         display: flex !important;
         align-items: center !important;
         cursor: text !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
     }
 
     .ts-wrapper .ts-control input {
@@ -545,11 +552,19 @@
         --shadow-color: rgba(0, 0, 0, 0.3);
     }
 
+    body {
+        overflow-x: hidden;
+    }
+
     .hrd-report-container {
-        max-width: 1400px;
+        width: 100%;
+        max-width: 100%;
         margin: 0 auto;
-        padding: 60px 20px 40px;
+        padding: 20px 0 40px;
         font-family: 'Outfit', sans-serif;
+        box-sizing: border-box;
+        container-type: inline-size;
+        container-name: hrd-content;
     }
 
     .report-header {
@@ -611,7 +626,10 @@
         margin-bottom: 30px;
         backdrop-filter: blur(20px);
         position: relative;
-        z-index: 50; /* Ensure filter section stays above table */
+        z-index: 50;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .filter-form {
@@ -624,17 +642,25 @@
         display: grid;
         grid-template-columns: 1fr;
         gap: 20px;
+        width: 100%;
     }
 
-    @media (min-width: 768px) {
+    /* Container Queries — responsive berdasarkan lebar konten, bukan viewport */
+    @container hrd-content (min-width: 600px) {
         .filter-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+        .grid-span-employee {
+            grid-column: span 2;
+        }
     }
 
-    @media (min-width: 1024px) {
+    @container hrd-content (min-width: 900px) {
         .filter-grid {
             grid-template-columns: repeat(3, 1fr);
+        }
+        .grid-span-employee {
+            grid-column: span 2;
         }
     }
 
@@ -642,22 +668,12 @@
         grid-column: span 1;
     }
 
-    @media (min-width: 768px) {
-        .grid-span-employee {
-            grid-column: span 2;
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .grid-span-employee {
-            grid-column: span 2;
-        }
-    }
-
     .filter-group {
         display: flex;
         flex-direction: column;
         gap: 8px;
+        width: 100%;
+        min-width: 0;
     }
 
     .filter-label {
@@ -676,6 +692,8 @@
         color: var(--text-main);
         font-size: 1rem;
         transition: all 0.3s;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .filter-input:focus {
@@ -799,24 +817,65 @@
         background: var(--glass-bg);
         border: 1px solid var(--card-border);
         border-radius: 24px;
-        overflow: visible; /* Important: allow dropdown to overflow table container */
         backdrop-filter: blur(20px);
         position: relative;
         z-index: 10;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
     }
 
     .table-wrapper {
+        width: 100%;
         overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: var(--brand-blue) var(--hover-bg);
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+        background: var(--hover-bg);
+        border-radius: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: var(--brand-blue);
+        border-radius: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: var(--brand-blue-dark);
     }
 
     .data-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: max-content;
     }
 
     .data-table thead {
         background: var(--hover-bg);
-        border-bottom: 2px solid var(--card-border);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .data-table thead::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: var(--card-border);
     }
 
     .data-table th {
@@ -827,20 +886,29 @@
         color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 1px;
+        white-space: nowrap;
+        background: var(--hover-bg);
+        position: sticky;
+        top: 0;
+        z-index: 15;
     }
 
     .data-table td {
         padding: 16px;
         color: var(--text-main);
         border-bottom: 1px solid var(--card-border);
+        white-space: nowrap;
+        min-width: fit-content;
     }
 
     .data-table tbody tr {
-        transition: background 0.2s;
+        transition: all 0.2s ease;
     }
 
     .data-table tbody tr:hover {
         background: var(--hover-bg);
+        transform: scale(1.001);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     .shift-name-badge {
@@ -1024,7 +1092,6 @@
         color: var(--text-secondary) !important;
     }
 
-    /* Hide the mobile view on desktop and vice versa */
     .pagination-wrapper nav > div:first-child { 
         display: flex;
     }
@@ -1045,9 +1112,17 @@
         backdrop-filter: blur(20px);
     }
 
+    .ts-wrapper {
+        width: 100% !important;
+    }
+
     @media (max-width: 768px) {
         .hrd-report-container {
             padding: 40px 15px 30px;
+        }
+
+        .filter-section {
+            padding: 20px;
         }
 
         .report-header {

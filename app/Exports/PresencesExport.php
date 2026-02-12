@@ -20,8 +20,14 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
         $this->filters = $filters;
     }
 
+    private $presences;
+
     public function collection()
     {
+        if ($this->presences) {
+            return $this->presences;
+        }
+
         $query = Presence::with('user');
         
         // Apply filters
@@ -62,27 +68,28 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
             });
         }
         
-        return $query->orderBy('date', 'desc')
+        $this->presences = $query->orderBy('date', 'desc')
                     ->orderBy('time_in', 'desc')
                     ->get();
+        
+        return $this->presences;
     }
 
     public function headings(): array
     {
         return [
-            ['Total Kehadiran: ' . $this->collection()->count() . ' Hari'],
-            [
-                'No',
-                'Tanggal',
-                'NIP',
-                'Nama',
-                'Unit',
-                'Shift',
-                'Jam Masuk',
-                'Jam Keluar',
-                'Status',
-                'Keterangan'
-            ]
+            'No',
+            'Tanggal',
+            'NIP',
+            'Nama',
+            'Unit',
+            'Total Kehadiran User',
+            'Total Keterlambatan User',
+            'Shift',
+            'Jam Masuk',
+            'Jam Keluar',
+            'Status',
+            'Keterangan'
         ];
     }
 
@@ -95,12 +102,21 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
             $status = $presence->status ?? 'Hadir';
         }
         
+        // Hitung total kehadiran per user (dari collection yang sudah difilter)
+        $userPresences = $this->collection()->where('user_id', $presence->user_id);
+        $totalKehadiranUser = $userPresences->count();
+        $totalTerlambatUser = $userPresences->filter(function ($p) {
+            return $p->status === 'Terlambat';
+        })->count();
+        
         return [
             $this->rowNumber,
             \Carbon\Carbon::parse($presence->date)->isoFormat('D MMMM Y'),
             $presence->user->nip ?? '-',
             $presence->user->name ?? 'N/A',
             $presence->user->unit ?? '-',
+            $totalKehadiranUser . ' Hari',
+            $totalTerlambatUser . ' Hari',
             $presence->shift_name ?? '-',
             $presence->time_in ? \Carbon\Carbon::parse($presence->time_in)->format('H:i') : '-',
             $presence->time_out ? \Carbon\Carbon::parse($presence->time_out)->format('H:i') : '-',
@@ -113,14 +129,8 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
 
     public function styles(Worksheet $sheet)
     {
-        // Merge Total Row
-        $sheet->mergeCells('A1:J1');
-
         return [
             1 => [
-                'font' => ['bold' => true, 'size' => 12],
-            ],
-            2 => [
                 'font' => ['bold' => true, 'size' => 12],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -134,16 +144,18 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
     public function columnWidths(): array
     {
         return [
-            'A' => 5,
-            'B' => 18,
-            'C' => 15,
-            'D' => 25,
-            'E' => 15,
-            'F' => 15,
-            'G' => 12,
-            'H' => 12,
-            'I' => 15,
-            'J' => 30,
+            'A' => 5,      // No
+            'B' => 18,     // Tanggal
+            'C' => 15,     // NIP
+            'D' => 25,     // Nama
+            'E' => 15,     // Unit
+            'F' => 20,     // Total Kehadiran User
+            'G' => 22,     // Total Keterlambatan User
+            'H' => 15,     // Shift
+            'I' => 12,     // Jam Masuk
+            'J' => 12,     // Jam Keluar
+            'K' => 15,     // Status
+            'L' => 30,     // Keterangan
         ];
     }
 }
