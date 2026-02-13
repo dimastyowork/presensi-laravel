@@ -208,6 +208,17 @@
                             <canvas id="overlay" class="overlay-canvas"></canvas>
                             <img id="photo-preview" class="image-preview hidden">
                             <canvas id="canvas" class="hidden"></canvas>
+
+                            <div id="liveness-instruction" class="liveness-instruction-container hidden">
+                                <div class="instruction-pill">
+                                    <div class="instruction-dot pulse"></div>
+                                    <span id="instruction-text">Mendeteksi Wajah...</span>
+                                </div>
+                                <div class="instruction-steps">
+                                    <div id="step-look" class="step-dot active"></div>
+                                    <div id="step-blink" class="step-dot"></div>
+                                </div>
+                            </div>
                             
                             <div id="camera-status" class="overlay-loading">
                                 <div class="spinner"></div>
@@ -276,7 +287,6 @@
 </div>
 
 @push('scripts')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
@@ -880,6 +890,81 @@
     .animate-bounce { animation: bounce 0.5s ease-out; }
     .animate-pulse { animation: pulse 2s ease-in-out infinite; }
 
+    .liveness-instruction-container {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        pointer-events: none;
+    }
+
+    .instruction-pill {
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 10px 20px;
+        border-radius: 100px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        transform: translateY(0);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .instruction-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #3b82f6;
+    }
+
+    .instruction-dot.pulse {
+        animation: dot-pulse 1.5s infinite;
+    }
+
+    @keyframes dot-pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+        70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    #instruction-text {
+        color: white;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .instruction-steps {
+        display: flex;
+        gap: 6px;
+    }
+
+    .step-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transition: all 0.3s;
+    }
+
+    .step-dot.active {
+        background: #3b82f6;
+        width: 15px;
+        border-radius: 10px;
+    }
+
+    .step-dot.success {
+        background: #10b981;
+    }
+
     @media (max-width: 900px) {
         .presence-container { padding: 30px 15px; }
         
@@ -1088,12 +1173,11 @@
     }
 </style>
 
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    const OFFICE_LOCATION = "{{ $settings['office_location'] ?? '' }}"; // Format: "-7.123, 108.123"
-    const OFFICE_RADIUS = {{ $settings['office_radius'] ?? 500 }}; // Meters
+    const OFFICE_LOCATION = "{{ $settings['office_location'] ?? '' }}";
+    const OFFICE_RADIUS = {{ $settings['office_radius'] ?? 500 }};
     let isLocationInRange = false;
 
     let currentStream = null;
@@ -1108,10 +1192,8 @@
             const loadingEl = document.getElementById('loading-text-content');
             if(loadingEl) loadingEl.textContent = "Memuat AI Wajah...";
             
-            // Attempt to load TinyFaceDetector first (Critical)
             await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
             
-            // Attempt to load Landmark (Optional for basic, required for strict)
             try {
                 await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
             } catch (landmarkError) {
@@ -1162,6 +1244,9 @@
             
             webcam.onloadedmetadata = () => {
                 camStatus.style.display = 'none';
+                document.getElementById('liveness-instruction').classList.remove('hidden');
+                window.livenessState = 0;
+                window.startLookTime = null;
                 startFaceDetection();
             };
         } catch (e) {
@@ -1180,6 +1265,8 @@
         const displaySize = { width: video.videoWidth, height: video.videoHeight };
         faceapi.matchDimensions(canvas, displaySize);
 
+        const faceOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 });
+
         if(detectionInterval) clearInterval(detectionInterval);
 
         detectionInterval = setInterval(async () => {
@@ -1189,14 +1276,14 @@
             
             if (faceapi.nets.faceLandmark68Net.isLoaded) {
                 try {
-                    detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                    detection = await faceapi.detectSingleFace(video, faceOptions).withFaceLandmarks();
                 } catch (e) {
                     console.warn("Landmark detection error, falling back to simple detection", e);
                 }
             }
             
             if (!detection) {
-                 const simpleDetections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+                 const simpleDetections = await faceapi.detectAllFaces(video, faceOptions);
                  if(simpleDetections.length > 0) {
                      detection = { detection: simpleDetections[0], landmarks: null };
                  }
@@ -1205,21 +1292,21 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            ctx.save();
             if (useFrontCamera) {
-                // ctx.save();
-                // ctx.scale(-1, 1);
-                // ctx.translate(-canvas.width, 0);
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
             }
             
-            if (useFrontCamera) {
-                // ctx.restore();
-            }
             const faceDetectedInput = document.getElementById('face-detected-input');
             
             if (detection) {
                 const resizedDetections = faceapi.resizeResults(detection, displaySize);
                 faceapi.draw.drawDetections(canvas, resizedDetections);
-                
+
+                let instruction = "";
+                let color = "white";
+
                 if (resizedDetections.landmarks) {
                     const landmarks = resizedDetections.landmarks;
                     const nose = landmarks.getNose()[0];
@@ -1239,65 +1326,71 @@
                     
                     const avgEAR = (getEAR(leftEye) + getEAR(rightEye)) / 2;
                     
-                    if(!window.livenessState) window.livenessState = 0;
-                    
-                    let instruction = "";
-                    let color = "white";
-                    
+                    const instrEl = document.getElementById('instruction-text');
+                    const stepLook = document.getElementById('step-look');
+                    const stepBlink = document.getElementById('step-blink');
+
                     switch(window.livenessState) {
                         case 0:
                             instruction = "Lihat Lurus ke Kamera";
+                            if (instrEl) instrEl.textContent = instruction;
+                            if (stepLook) stepLook.className = 'step-dot active';
+                            if (stepBlink) stepBlink.className = 'step-dot';
+
                             if (noseRelX > 0.4 && noseRelX < 0.6) {
-                                setTimeout(() => { if(window.livenessState === 0) window.livenessState = 1; }, 1000);
+                                if(!window.startLookTime) window.startLookTime = Date.now();
+                                if(Date.now() - window.startLookTime > 800) {
+                                    window.livenessState = 1;
+                                    window.startLookTime = null;
+                                }
+                            } else {
+                                window.startLookTime = null;
                             }
                             break;
                         case 1:
                             instruction = "KEDIPKAN Mata Anda";
-                            if (avgEAR < 0.25) window.livenessState = 2; 
+                            if (instrEl) instrEl.textContent = instruction;
+                            if (stepLook) stepLook.className = 'step-dot success';
+                            if (stepBlink) stepBlink.className = 'step-dot active';
+
+                            if (avgEAR < 0.22) {
+                                window.livenessState = 2; 
+                            }
                             break;
                         case 2:
                             instruction = "VERIFIKASI BERHASIL!";
+                            if (instrEl) instrEl.textContent = instruction;
+                            if (stepLook) stepLook.className = 'step-dot success';
+                            if (stepBlink) stepBlink.className = 'step-dot success';
+
                             color = "#10b981";
                             if(faceDetectedInput) faceDetectedInput.value = "true";
                             break;
                     }
-                    
-                    if (useFrontCamera) ctx.restore(); 
-                    
-                    ctx.font = "900 24px 'Outfit', sans-serif";
-                    ctx.textAlign = "center";
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = 'black';
-                    ctx.strokeText(instruction, canvas.width/2, 50);
-                    ctx.fillStyle = color;
-                    ctx.fillText(instruction, canvas.width/2, 50);
-
-                    if (window.livenessState === 2) {
-                        snapBtn.style.borderColor = "#10b981"; 
-                        snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
-                        snapBtn.disabled = false;
-                    } else {
-                         snapBtn.style.borderColor = "#f59e0b";
-                         snapBtn.style.boxShadow = "none";
-                         if(faceDetectedInput) faceDetectedInput.value = "false";
-                    }
-                    
                 } else {
-                    if (useFrontCamera) ctx.restore();
-                    
-                    ctx.font = "bold 16px Arial";
-                    ctx.fillStyle = "yellow";
-                    ctx.textAlign = "center";
-                    ctx.fillText("Model Liveness Tidak Lengkap", canvas.width/2, 30);
-                    
-                    snapBtn.style.borderColor = "#10b981";
-                    snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
-                    snapBtn.disabled = false;
+                    instruction = "Mencari Titik Wajah...";
+                    const instrEl = document.getElementById('instruction-text');
+                    if(instrEl) instrEl.textContent = instruction;
+                    color = "#10b981";
                     if(faceDetectedInput) faceDetectedInput.value = "true";
                 }
 
+                ctx.restore();
+                
+                if (window.livenessState === 2 || (!resizedDetections.landmarks && detection)) {
+                    snapBtn.style.borderColor = "#10b981"; 
+                    snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
+                    snapBtn.disabled = false;
+                } else {
+                     snapBtn.style.borderColor = "#f59e0b";
+                     snapBtn.style.boxShadow = "none";
+                     if(faceDetectedInput) faceDetectedInput.value = "false";
+                }
+                
             } else {
-                if (useFrontCamera) ctx.restore();
+                ctx.restore();
+                const instrEl = document.getElementById('instruction-text');
+                if(instrEl) instrEl.textContent = "Wajah Tidak Terdeteksi";
                 
                 if(faceDetectedInput) faceDetectedInput.value = "false";
                 window.livenessState = 0;
@@ -1305,7 +1398,7 @@
                 snapBtn.style.boxShadow = "none";
             }
 
-        }, 100);
+        }, 150);
     };
 
     window.toggleCamera = () => {
@@ -1468,6 +1561,7 @@
             
             webcam.classList.add('hidden');
             document.getElementById('overlay').classList.add('hidden'); 
+            document.getElementById('liveness-instruction').classList.add('hidden');
             snapOverlay.classList.add('hidden');
             
             retakeBtn.classList.remove('hidden');
@@ -1487,6 +1581,7 @@
             preview.classList.add('hidden');
             webcam.classList.remove('hidden');
             overlay.classList.remove('hidden');
+            document.getElementById('liveness-instruction').classList.remove('hidden');
             snapOverlay.classList.remove('hidden');
             retakeBtn.classList.add('hidden');
             
