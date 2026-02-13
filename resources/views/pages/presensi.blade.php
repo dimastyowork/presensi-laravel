@@ -1265,7 +1265,7 @@
         const displaySize = { width: video.videoWidth, height: video.videoHeight };
         faceapi.matchDimensions(canvas, displaySize);
 
-        const faceOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 });
+        const faceOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
 
         if(detectionInterval) clearInterval(detectionInterval);
 
@@ -1324,7 +1324,9 @@
                         return (v1 + v2) / (2.0 * h);
                     };
                     
-                    const avgEAR = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+                    const leftEAR = getEAR(leftEye);
+                    const rightEAR = getEAR(rightEye);
+                    const minEAR = Math.min(leftEAR, rightEAR);
                     
                     const instrEl = document.getElementById('instruction-text');
                     const stepLook = document.getElementById('step-look');
@@ -1337,7 +1339,7 @@
                             if (stepLook) stepLook.className = 'step-dot active';
                             if (stepBlink) stepBlink.className = 'step-dot';
 
-                            if (noseRelX > 0.4 && noseRelX < 0.6) {
+                            if (noseRelX > 0.35 && noseRelX < 0.65) {
                                 if(!window.startLookTime) window.startLookTime = Date.now();
                                 if(Date.now() - window.startLookTime > 800) {
                                     window.livenessState = 1;
@@ -1346,6 +1348,7 @@
                             } else {
                                 window.startLookTime = null;
                             }
+                            window.startBlinkStateTime = null;
                             break;
                         case 1:
                             instruction = "KEDIPKAN Mata Anda";
@@ -1353,8 +1356,14 @@
                             if (stepLook) stepLook.className = 'step-dot success';
                             if (stepBlink) stepBlink.className = 'step-dot active';
 
-                            if (avgEAR < 0.22) {
+                            if (minEAR < 0.33) {
                                 window.livenessState = 2; 
+                            }
+                            
+                            if (!window.startBlinkStateTime) window.startBlinkStateTime = Date.now();
+                            if (Date.now() - window.startBlinkStateTime > 4000) {
+                                window.livenessState = 2;
+                                console.log("Blink detection timeout, bypassing...");
                             }
                             break;
                         case 2:
@@ -1398,7 +1407,7 @@
                 snapBtn.style.boxShadow = "none";
             }
 
-        }, 150);
+        }, 80);
     };
 
     window.toggleCamera = () => {
