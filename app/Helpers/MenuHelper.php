@@ -40,6 +40,11 @@ class MenuHelper
                 'path' => '/units',
             ];
             $menuItems[] = [
+                'name' => 'Manajemen Shift',
+                'icon' => 'clock',
+                'path' => '/shifts',
+            ];
+            $menuItems[] = [
                 'name' => 'Pengaturan Global',
                 'icon' => 'settings',
                 'path' => '/settings',

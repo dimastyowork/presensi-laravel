@@ -41,7 +41,6 @@ class UnitController extends Controller
             $obj->id = $obj->id ?? $obj->ID ?? $obj->id_unit ?? $obj->id_user ?? $obj->unit_id ?? null;
             $obj->name = $obj->name ?? $obj->nama ?? $obj->nama_unit ?? 'N/A';
             $obj->working_days = is_array($obj->working_days ?? null) ? $obj->working_days : [];
-            $obj->available_shifts = is_array($obj->available_shifts ?? null) ? $obj->available_shifts : [];
             
             if (isset($obj->created_at) && is_string($obj->created_at)) {
                 $obj->created_at = \Carbon\Carbon::parse($obj->created_at);
@@ -107,10 +106,6 @@ class UnitController extends Controller
         $validated = $request->validate([
             'sso_unit_id' => 'nullable|integer',
             'name' => 'nullable|string|max:255',
-            'available_shifts' => 'nullable|array',
-            'available_shifts.*.name' => 'required|string|max:255',
-            'available_shifts.*.start_time' => 'required|string',
-            'available_shifts.*.end_time' => 'required|string',
             'working_days' => 'nullable|array',
         ]);
 
@@ -142,7 +137,6 @@ class UnitController extends Controller
         LocalUnit::updateOrCreate(
             ['sso_unit_id' => $ssoUnitId],
             [
-                'available_shifts' => $validated['available_shifts'] ?? [],
                 'working_days' => $validated['working_days'],
             ]
         );
@@ -167,7 +161,6 @@ class UnitController extends Controller
             'id' => $normalized['id'],
             'name' => $normalized['name'],
             'working_days' => is_array($local?->working_days) ? $local->working_days : [],
-            'available_shifts' => is_array($local?->available_shifts) ? $local->available_shifts : [],
         ];
         
         return view('pages.units.edit', compact('unit'));
@@ -176,10 +169,6 @@ class UnitController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'available_shifts' => 'nullable|array',
-            'available_shifts.*.name' => 'required|string|max:255',
-            'available_shifts.*.start_time' => 'required|string',
-            'available_shifts.*.end_time' => 'required|string',
             'working_days' => 'nullable|array',
         ]);
 
@@ -193,7 +182,6 @@ class UnitController extends Controller
         LocalUnit::updateOrCreate(
             ['sso_unit_id' => (int) $ssoUnitId],
             [
-                'available_shifts' => $validated['available_shifts'] ?? [],
                 'working_days' => $validated['working_days'],
             ]
         );

@@ -56,7 +56,6 @@
                         <th>No</th>
                         <th>Nama Unit</th>
                         <th>Hari Kerja</th>
-                        <th>Shift Tersedia</th>
                         <th>Dibuat</th>
                         <th>Aksi</th>
                     </tr>
@@ -77,23 +76,6 @@
                                 </div>
                             @else
                                 <span class="text-dim">Semua Hari</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if(!empty($unit->available_shifts) && is_iterable($unit->available_shifts) && count($unit->available_shifts) > 0)
-                                <div class="shifts-container">
-                                    @foreach($unit->available_shifts as $shift)
-                                        <span class="shift-badge-small">
-                                            @if(is_array($shift))
-                                                {{ $shift['name'] }} ({{ $shift['start_time'] }} - {{ $shift['end_time'] }})
-                                            @else
-                                                {{ $shift }}
-                                            @endif
-                                        </span>
-                                    @endforeach
-                                </div>
-                            @else
-                                <span class="text-dim">Belum diatur</span>
                             @endif
                         </td>
                         <td>{{ $unit->created_at->isoFormat('D MMM Y') }}</td>
@@ -137,7 +119,6 @@
             </table>
         </div>
 
-        <!-- Footer: Pagination & Per Page -->
         <div class="table-footer glass">
             <div class="per-page-footer">
                 <form action="{{ route('units.index') }}" method="GET" id="perPageForm">

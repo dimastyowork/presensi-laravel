@@ -48,6 +48,7 @@
                         <th>NIP</th>
                         <th>Nama</th>
                         <th>Unit</th>
+                        <th>Shift</th>
                         <th>Terdaftar</th>
                         <th>Aksi</th>
                     </tr>
@@ -59,6 +60,7 @@
                         <td><span class="nip-badge">{{ $user->nip ?? '-' }}</span></td>
                         <td class="font-semibold">{{ $user->name }}</td>
                         <td><span class="unit-badge">{{ $user->unit ?? '-' }}</span></td>
+                        <td><span class="shift-badge">{{ $user->shift ?? '-' }}</span></td>
                         <td>{{ $user->created_at->isoFormat('D MMM Y') }}</td>
                         <td>
                             <div class="action-buttons">

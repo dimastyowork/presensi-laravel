@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Shift;
+use App\Models\UserShift;
 use App\Services\SsoApiService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -17,6 +19,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        $allShifts = Shift::all();
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = (int) $request->input('page', 1);
         
@@ -38,12 +41,21 @@ class UserController extends Controller
             $itemsRaw = $itemsRaw['data'];
         }
 
-        $items = collect($itemsRaw)->values()->map(function($item) {
+        $pagedItemsRaw = collect($itemsRaw)->values();
+        $userIds = $pagedItemsRaw->map(fn($item) => $item['id'] ?? $item['ID'] ?? $item['id_user'] ?? $item['user_id'] ?? null)->filter()->toArray();
+        $userShifts = UserShift::with('shift')->whereIn('user_id', $userIds)->get()->keyBy('user_id');
+
+        $items = $pagedItemsRaw->map(function($item) use ($userShifts) {
             $obj = (object) $item;
             $obj->id = $obj->id ?? $obj->ID ?? $obj->id_user ?? $obj->user_id ?? $obj->nip ?? null;
             $obj->name = $obj->name ?? $obj->nama ?? $obj->name_user ?? $obj->nip ?? 'N/A';
             $obj->nip = $obj->nip ?? $obj->username ?? '-';
             $obj->unit = $obj->unit ?? $obj->nama_unit ?? $obj->unit_name ?? '-';
+            
+            // Attach shift info
+            $shiftRecord = $userShifts->get($obj->id);
+            $obj->shift = $shiftRecord->shift->name ?? '-';
+            $obj->shift_id = $shiftRecord->shift_id ?? null;
 
             if (isset($obj->created_at) && is_string($obj->created_at)) {
                 $obj->created_at = \Carbon\Carbon::parse($obj->created_at);
@@ -65,8 +77,28 @@ class UserController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return view('pages.users.index', compact('users'));
+        return view('pages.users.index', compact('users', 'allShifts'));
     }
+
+    public function quickUpdateShift(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required',
+            'shift_id' => 'nullable|exists:shifts,id'
+        ]);
+
+        if ($request->shift_id) {
+            UserShift::updateOrCreate(
+                ['user_id' => $request->user_id],
+                ['shift_id' => $request->shift_id]
+            );
+        } else {
+            UserShift::where('user_id', $request->user_id)->delete();
+        }
+
+        return response()->json(['success' => true, 'message' => 'Shift updated successfully']);
+    }
+
 
     public function create()
     {
@@ -123,7 +155,11 @@ class UserController extends Controller
             ->filter(fn($u) => !empty($u->name))
             ->values();
 
-        return view('pages.users.edit', compact('user', 'units'));
+        $shifts = Shift::all();
+        $userShift = UserShift::where('user_id', $id)->first();
+        $user->shift_id = $userShift->shift_id ?? null;
+
+        return view('pages.users.edit', compact('user', 'units', 'shifts'));
     }
 
     public function update(Request $request, $id)
@@ -141,7 +177,17 @@ class UserController extends Controller
             return back()->withInput()->with('error', $result['message'] ?? 'Gagal mengupdate user di SSO');
         }
 
-        return redirect()->route('users.index')->with('success', 'User berhasil diupdate di SSO!');
+        // Handle Shift update
+        if ($request->filled('shift_id')) {
+            UserShift::updateOrCreate(
+                ['user_id' => $id],
+                ['shift_id' => $request->shift_id]
+            );
+        } else {
+            UserShift::where('user_id', $id)->delete();
+        }
+
+        return redirect()->route('users.index')->with('success', 'User berhasil diupdate!');
     }
 
     public function destroy($id)

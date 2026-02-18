@@ -3,11 +3,45 @@
 
 @section('content')
 <div x-data="{ 
-    step: 'choice', 
+    step: '{{ $isShiftSelected ? 'choice' : 'shift_selection' }}', 
     type: 'in',
     hasIn: {{ ($presence && $presence->time_in) ? 'true' : 'false' }},
     hasOut: {{ ($presence && $presence->time_out) ? 'true' : 'false' }},
 }" class="presence-container">
+
+    <template x-if="step === 'shift_selection'">
+        <div class="shift-selection-screen animate-fade-in">
+            <div class="welcome-header">
+                <h1 class="welcome-title">Pilih <span class="text-brand">Shift Anda</span></h1>
+                <p class="welcome-subtitle">Silakan pilih shift kerja Anda untuk hari ini</p>
+            </div>
+
+            <div class="shift-cards-container">
+                <form action="{{ route('presence.update_shift') }}" method="POST" id="shift-form">
+                    @csrf
+                    <input type="hidden" name="shift_id" id="selected-shift-id">
+                    
+                    <div class="shift-grid">
+                        @foreach($allShifts as $shift)
+                        <div @click="document.getElementById('selected-shift-id').value = '{{ $shift->id }}'; document.getElementById('shift-form').submit()" 
+                             class="shift-card-item glass">
+                            <div class="shift-info">
+                                <h3 class="shift-name">{{ $shift->name }}</h3>
+                                <div class="shift-time">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5"/></svg>
+                                    <span>{{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}</span>
+                                </div>
+                            </div>
+                            <div class="shift-arrow">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3"/></svg>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
 
     <template x-if="step === 'choice'">
         <div class="choice-screen animate-fade-in">
@@ -149,7 +183,14 @@
                 </div>
             </div>
 
-
+            @if(!$presence || !$presence->time_in)
+            <div class="mt-12 animate-fade-in">
+                <button @click="step = 'shift_selection'" class="btn-change-shift glass">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5"/></svg>
+                    <span>Ganti Shift Kerja</span>
+                </button>
+            </div>
+            @endif
 
             @if($presence)
             <div class="summary-container animate-slide-up">
@@ -341,6 +382,68 @@
         min-height: 60vh;
     }
 
+    .shift-selection-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        width: 100%;
+    }
+
+    .shift-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: 900px;
+        margin-top: 40px;
+    }
+
+    .shift-card-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 25px 35px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid var(--glass-border);
+    }
+
+    .shift-card-item:hover {
+        transform: translateY(-5px);
+        background: var(--hover-bg);
+        border-color: var(--brand-blue);
+        box-shadow: 0 15px 30px var(--shadow-color);
+    }
+
+    .shift-name {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-bottom: 5px;
+    }
+
+    .shift-time {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .shift-arrow {
+        color: var(--text-tertiary);
+        transition: transform 0.3s;
+    }
+
+    .shift-card-item:hover .shift-arrow {
+        color: var(--brand-blue);
+        transform: translateX(5px);
+    }
+
     .alert {
         display: flex;
         align-items: center;
@@ -489,6 +592,26 @@
     }
     .badge-green { background: var(--brand-emerald); }
     .badge-orange { background: var(--brand-orange); }
+
+    .btn-change-shift {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 24px;
+        border-radius: 12px;
+        color: var(--text-secondary);
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 1px solid var(--glass-border);
+    }
+
+    .btn-change-shift:hover {
+        background: var(--hover-bg);
+        color: var(--brand-blue);
+        border-color: var(--brand-blue);
+    }
 
     .summary-container { margin-top: 80px; width: 100%; max-width: 600px; }
     .summary-divider { 

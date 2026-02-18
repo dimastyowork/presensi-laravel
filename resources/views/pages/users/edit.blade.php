@@ -65,6 +65,22 @@
                     @enderror
                 </div>
 
+                <!-- Shift -->
+                <div class="form-group">
+                    <label class="form-label">Shift Kerja</label>
+                    <select name="shift_id" class="form-input @error('shift_id') error @enderror">
+                        <option value="">Pilih Shift (Jika ada)</option>
+                        @foreach($shifts as $shift)
+                            <option value="{{ $shift->id }}" {{ old('shift_id', $user->shift_id) == $shift->id ? 'selected' : '' }}>
+                                {{ $shift->name }} ({{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('shift_id')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <!-- Password -->
                 <div class="form-group">
                     <label class="form-label">Password Baru</label>

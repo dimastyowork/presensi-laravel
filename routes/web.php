@@ -4,6 +4,11 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\GlobalSettingController;
+use App\Http\Controllers\PasswordController;
 
 Route::get('/', function () {
     return redirect()->route('presence.index');
@@ -18,12 +23,13 @@ Route::get('/persetujuan-dan-kebijakan', function () {
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/ganti-password', [App\Http\Controllers\PasswordController::class, 'changePassword'])->name('password.change');
-    Route::post('/ganti-password', [App\Http\Controllers\PasswordController::class, 'updatePassword'])->name('password.update');
+    Route::get('/ganti-password', [PasswordController::class, 'changePassword'])->name('password.change');
+    Route::post('/ganti-password', [PasswordController::class, 'updatePassword'])->name('password.update');
 
     Route::get('/presensi', [PresenceController::class, 'index'])->name('presence.index');
     Route::get('/presensi/riwayat', [PresenceController::class, 'history'])->name('presence.history');
     Route::post('/presensi', [PresenceController::class, 'store'])->name('presence.store');
+    Route::post('/presensi/update-shift', [PresenceController::class, 'updateShift'])->name('presence.update_shift');
     Route::put('/presensi/{presence}', [PresenceController::class, 'update'])->name('presence.update');
     Route::get('/images/presences/{filename}', [PresenceController::class, 'showImage'])->name('presence.image');
     
@@ -34,11 +40,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/laporan-hrd/{presence}', [PresenceController::class, 'showDetail'])->name('hrd.detail');
         Route::post('/laporan-hrd/approve/{id}', [PresenceController::class, 'approve'])->name('hrd.approve');
         
-        Route::resource('users', App\Http\Controllers\UserController::class);
+        Route::post('/users/quick-update-shift', [UserController::class, 'quickUpdateShift'])->name('users.quick-update-shift');
+        Route::resource('users', UserController::class);
         
-        Route::resource('units', App\Http\Controllers\UnitController::class);
+        Route::resource('units', UnitController::class);
+        Route::resource('shifts', ShiftController::class);
 
-        Route::get('/settings', [App\Http\Controllers\GlobalSettingController::class, 'index'])->name('settings.index');
-        Route::put('/settings', [App\Http\Controllers\GlobalSettingController::class, 'update'])->name('settings.update');
+        Route::get('/settings', [GlobalSettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [GlobalSettingController::class, 'update'])->name('settings.update');
     });
 });

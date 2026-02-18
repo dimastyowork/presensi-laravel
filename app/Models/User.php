@@ -21,10 +21,15 @@ class User extends Authenticatable
         'nip',
         'name',
         'unit',
-        'shift',
+        'shift_id',
         'password',
         'is_initial_password',
     ];
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

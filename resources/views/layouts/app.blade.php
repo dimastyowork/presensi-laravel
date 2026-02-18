@@ -9,13 +9,10 @@
     <title>{{ strtoupper($__env->yieldContent('title', $title ?? 'DASHBOARD')) }} | {{ strtoupper(config('app.name')) }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo/logo-title.svg') }}">
 
-    <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Alpine.js -->
     {{-- <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
-    <!-- Theme Store -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('theme', {
@@ -44,20 +41,17 @@
             });
 
             Alpine.store('sidebar', {
-                // Initialize based on screen size
-                isExpanded: window.innerWidth >= 1280, // true for desktop, false for mobile
+                isExpanded: window.innerWidth >= 1280,
                 isMobileOpen: false,
                 isHovered: false,
 
                 toggleExpanded() {
                     this.isExpanded = !this.isExpanded;
-                    // When toggling desktop sidebar, ensure mobile menu is closed
                     this.isMobileOpen = false;
                 },
 
                 toggleMobileOpen() {
                     this.isMobileOpen = !this.isMobileOpen;
-                    // Don't modify isExpanded when toggling mobile menu
                 },
 
                 setMobileOpen(val) {
@@ -65,7 +59,6 @@
                 },
 
                 setHovered(val) {
-                    // Only allow hover effects on desktop when sidebar is collapsed
                     if (window.innerWidth >= 1280 && !this.isExpanded) {
                         this.isHovered = val;
                     }
@@ -116,9 +109,7 @@
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
                 'ml-0': $store.sidebar.isMobileOpen
             }">
-            <!-- app header start -->
             @include('layouts.app-header')
-            <!-- app header end -->
             <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 @yield('content')
             </div>
@@ -130,11 +121,9 @@
 
 @stack('scripts')
 
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Success Message
         @if (session('success'))
             Swal.fire({
                 icon: 'success',
@@ -148,7 +137,6 @@
             });
         @endif
 
-        // Error Message
         @if (session('error'))
             Swal.fire({
                 icon: 'error',
@@ -159,7 +147,6 @@
             });
         @endif
 
-        // Delete Confirmation
         window.confirmDelete = function(formId) {
             Swal.fire({
                 title: 'Apakah Anda yakin?',

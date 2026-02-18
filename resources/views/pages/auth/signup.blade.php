@@ -4,7 +4,6 @@
 @section('content')
     <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
         <div class="flex h-screen w-full flex-col justify-center sm:p-0 lg:flex-row dark:bg-gray-900">
-            <!-- Form -->
             <div class="flex w-full flex-1 flex-col lg:w-1/2">
                 <div class="mx-auto w-full max-w-md pt-5 sm:py-10">
                     <a href="/"
@@ -56,7 +55,6 @@
                         <form>
                             <div class="space-y-5">
                                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                    <!-- First Name -->
                                     <div class="sm:col-span-1">
                                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                             First Name<span class="text-error-500">*</span>
@@ -65,7 +63,6 @@
                                             placeholder="Enter your first name"
                                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                     </div>
-                                    <!-- Last Name -->
                                     <div class="sm:col-span-1">
                                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                             Last Name<span class="text-error-500">*</span>
@@ -75,7 +72,6 @@
                                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                     </div>
                                 </div>
-                                <!-- Email -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Email<span class="text-error-500">*</span>
@@ -83,7 +79,6 @@
                                     <input type="email" id="email" name="email" placeholder="Enter your email"
                                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                 </div>
-                                <!-- Password -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Password<span class="text-error-500">*</span>
@@ -102,7 +97,6 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Checkbox -->
                                 <div>
                                     <div x-data="{ checkboxToggle: false }">
                                         <label for="checkboxLabelOne"
@@ -132,7 +126,6 @@
                                         </label>
                                     </div>
                                 </div>
-                                <!-- Button -->
                                 <div>
                                     <button
                                         class="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition">
@@ -152,7 +145,6 @@
             </div>
             <div class="bg-brand-950 relative hidden h-full w-full items-center lg:grid lg:w-1/2 dark:bg-white/5">
                 <div class="z-1 flex items-center justify-center">
-                    <!-- ===== Common Grid Shape Start ===== -->
                     <x-common.common-grid-shape />
                     <div class="flex max-w-xs flex-col items-center">
                         <a href="/" class="mb-4 block">
@@ -164,7 +156,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Toggler -->
             <div class="fixed right-6 bottom-6 z-50">
                 <button
                     class="bg-brand-500 hover:bg-brand-600 inline-flex size-14 items-center justify-center rounded-full text-white transition-colors"

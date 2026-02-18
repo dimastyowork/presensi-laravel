@@ -115,7 +115,6 @@ class SsoApiService
             'id' => $rawUnit['id'] ?? $rawUnit['ID'] ?? $rawUnit['id_unit'] ?? $rawUnit['unit_id'] ?? null,
             'name' => $rawUnit['name'] ?? $rawUnit['nama'] ?? $rawUnit['nama_unit'] ?? 'N/A',
             'working_days' => $rawUnit['working_days'] ?? [],
-            'available_shifts' => $rawUnit['available_shifts'] ?? [],
             'raw' => $rawUnit,
         ];
     }

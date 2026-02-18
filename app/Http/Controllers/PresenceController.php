@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presence;
+use App\Models\Shift;
+use App\Models\UserShift;
 use App\Models\Unit as LocalUnit;
 use App\Services\SsoApiService;
 use Illuminate\Http\Request;
@@ -46,16 +48,17 @@ class PresenceController extends Controller
 
         $unit = $this->resolveUserUnit($user);
         
+        $userShift = UserShift::with('shift')->where('user_id', $userId)->first();
+        $allShifts = Shift::all();
+        $isShiftSelected = ($userShift && $userShift->shift);
+
         $isWorkingDay = false;
         $dayName = $today->isoFormat('dddd');
-        $isScheduleConfigured = $unit && count($unit->working_days) > 0 && count($unit->available_shifts) > 0;
+        
+        // Use unit's working days, or default to all days
+        $workingDays = $unit->working_days ?? ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        $isWorkingDay = $this->isWorkingDay($today, $workingDays);
 
-        if ($isScheduleConfigured) {
-            $isWorkingDay = $this->isWorkingDay($today, $unit->working_days);
-        }
-
-        // Shift proximity logic for UI
-        $closestShift = null;
         $activeShiftInfo = [
             'is_expired' => false,
             'is_too_early' => false,
@@ -65,29 +68,31 @@ class PresenceController extends Controller
             'end_time' => null
         ];
 
-        if ($isScheduleConfigured) {
+        if ($isShiftSelected) {
+            $shift = $userShift->shift;
+            $tS = Carbon::parse($today->toDateString() . ' ' . $shift->start_time);
+            $diffs = [
+                ['time' => $tS, 'logical' => $today],
+                ['time' => (clone $tS)->subDay(), 'logical' => (clone $today)->subDay()],
+                ['time' => (clone $tS)->addDay(), 'logical' => (clone $today)->addDay()],
+            ];
+
             $minDiff = null;
-            foreach ($unit->available_shifts as $shift) {
-                if (!isset($shift['start_time'])) continue;
-                $tS = Carbon::parse($today->toDateString() . ' ' . $shift['start_time']);
-                $diffs = [
-                    ['time' => $tS, 'logical' => $today],
-                    ['time' => (clone $tS)->subDay(), 'logical' => (clone $today)->subDay()],
-                    ['time' => (clone $tS)->addDay(), 'logical' => (clone $today)->addDay()],
-                ];
-                foreach ($diffs as $d) {
-                    $diff = abs($now->diffInMinutes($d['time']));
-                    if ($minDiff === null || $diff < $minDiff) {
-                        $minDiff = $diff;
-                        $closestShift = $shift;
-                        $activeShiftInfo['start_time'] = $d['time'];
-                        $activeShiftInfo['logical_date'] = $d['logical'];
-                    }
+            $bestMatch = null;
+            foreach ($diffs as $d) {
+                $diff = abs($now->diffInMinutes($d['time']));
+                if ($minDiff === null || $diff < $minDiff) {
+                    $minDiff = $diff;
+                    $bestMatch = $d;
                 }
             }
-            if ($closestShift) {
-                $activeShiftInfo['shift_name'] = $closestShift['name'];
-                $activeShiftInfo['end_time'] = Carbon::parse($activeShiftInfo['logical_date']->toDateString() . ' ' . $closestShift['end_time']);
+
+            if ($bestMatch) {
+                $activeShiftInfo['shift_name'] = $shift->name;
+                $activeShiftInfo['start_time'] = $bestMatch['time'];
+                $activeShiftInfo['logical_date'] = $bestMatch['logical'];
+                $activeShiftInfo['end_time'] = Carbon::parse($activeShiftInfo['logical_date']->toDateString() . ' ' . $shift->end_time);
+                
                 if ($activeShiftInfo['end_time']->lt($activeShiftInfo['start_time'])) {
                     $activeShiftInfo['end_time']->addDay();
                 }
@@ -100,7 +105,21 @@ class PresenceController extends Controller
         $settings = \App\Models\GlobalSetting::all()->pluck('value', 'key');
 
         $selectedType = $request->query('type');
-        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isScheduleConfigured'));
+        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isShiftSelected', 'allShifts'));
+    }
+
+    public function updateShift(Request $request)
+    {
+        $request->validate([
+            'shift_id' => 'required|exists:shifts,id'
+        ]);
+
+        UserShift::updateOrCreate(
+            ['user_id' => Auth::id()],
+            ['shift_id' => $request->shift_id]
+        );
+
+        return back()->with('success', 'Shift berhasil dipilih. Silakan lakukan absen.');
     }
 
     public function store(Request $request)
@@ -111,76 +130,56 @@ class PresenceController extends Controller
         $type = $request->input('type', 'in');
         $unit = $this->resolveUserUnit($user);
 
-        // Untuk absen masuk, jadwal unit wajib lengkap.
-        // Untuk absen pulang, tetap izinkan selama ada sesi masuk terbuka.
-        if ($type === 'in') {
-            if (
-                !$unit ||
-                count($unit->available_shifts) === 0 ||
-                count($unit->working_days) === 0
-            ) {
-                return back()->with('error', 'Jadwal unit Anda belum diatur lengkap (hari kerja/shift). Hubungi admin.');
-            }
+        // Fetch user shift
+        $userShift = UserShift::with('shift')->where('user_id', $userId)->first();
+        
+        if ($type === 'in' && (!$userShift || !$userShift->shift)) {
+            return back()->with('error', 'Anda belum memilih shift kerja. Silakan pilih shift terlebih dahulu.');
         }
 
-        // 1. Identify Closest Shift and Logical Work Date
+        // 1. Identify Shift and Logical Work Date
         $shiftName = null;
         $status = 'Hadir';
         $logicalDate = Carbon::today();
+        
+        if ($userShift && $userShift->shift) {
+            $shift = $userShift->shift;
+            $shiftName = $shift->name;
+            
+            $todayStart = Carbon::parse(Carbon::today()->toDateString() . ' ' . $shift->start_time);
+            $yesterdayStart = (clone $todayStart)->subDay();
+            $tomorrowStart = (clone $todayStart)->addDay();
 
-        if ($unit && count($unit->available_shifts) > 0) {
-            $closestShift = null;
-            $closestShiftStartTime = null;
-            $minDiff = null;
+            $diffs = [
+                ['diff' => abs($now->diffInMinutes($todayStart)), 'time' => $todayStart, 'logical' => Carbon::today()],
+                ['diff' => abs($now->diffInMinutes($yesterdayStart)), 'time' => $yesterdayStart, 'logical' => Carbon::yesterday()],
+                ['diff' => abs($now->diffInMinutes($tomorrowStart)), 'time' => $tomorrowStart, 'logical' => Carbon::tomorrow()],
+            ];
 
-            foreach ($unit->available_shifts as $shift) {
-                if (!isset($shift['start_time'])) continue;
+            usort($diffs, fn($a, $b) => $a['diff'] <=> $b['diff']);
+            $best = $diffs[0];
+            
+            $shiftStartTime = $best['time'];
+            $logicalDate = $best['logical'];
 
-                try {
-                    $todayStart = Carbon::parse(Carbon::today()->toDateString() . ' ' . $shift['start_time']);
-                    $yesterdayStart = (clone $todayStart)->subDay();
-                    $tomorrowStart = (clone $todayStart)->addDay();
-
-                    $diffs = [
-                        ['diff' => abs($now->diffInMinutes($todayStart)), 'time' => $todayStart, 'logical' => Carbon::today()],
-                        ['diff' => abs($now->diffInMinutes($yesterdayStart)), 'time' => $yesterdayStart, 'logical' => Carbon::yesterday()],
-                        ['diff' => abs($now->diffInMinutes($tomorrowStart)), 'time' => $tomorrowStart, 'logical' => Carbon::tomorrow()],
-                    ];
-
-                    usort($diffs, fn($a, $b) => $a['diff'] <=> $b['diff']);
-                    $best = $diffs[0];
-
-                    if ($minDiff === null || $best['diff'] < $minDiff) {
-                        $minDiff = $best['diff'];
-                        $closestShift = $shift;
-                        $closestShiftStartTime = $best['time'];
-                        $logicalDate = $best['logical'];
-                    }
-                } catch (\Exception $e) { continue; }
+            // Calculate Expected End Time
+            $shiftEndTime = Carbon::parse($logicalDate->toDateString() . ' ' . $shift->end_time);
+            if ($shiftEndTime->lt($shiftStartTime)) {
+                $shiftEndTime->addDay();
             }
 
-            if ($closestShift && $closestShiftStartTime) {
-                $shiftName = $closestShift['name'];
-                
-                // Calculate Expected End Time
-                $closestShiftEndTime = Carbon::parse($logicalDate->toDateString() . ' ' . $closestShift['end_time']);
-                if ($closestShiftEndTime->lt($closestShiftStartTime)) {
-                    $closestShiftEndTime->addDay();
-                }
+            // Block if shift has already ended
+            if ($type === 'in' && $now->gt($shiftEndTime)) {
+                return back()->with('error', "Maaf, shift $shiftName untuk jadwal ini sudah berakhir pada pukul " . $shiftEndTime->format('H:i') . " (" . $shiftEndTime->isoFormat('D MMMM') . ").");
+            }
 
-                // Block if shift has already ended
-                if ($type === 'in' && $now->gt($closestShiftEndTime)) {
-                    return back()->with('error', "Maaf, shift $shiftName untuk jadwal ini sudah berakhir pada pukul " . $closestShiftEndTime->format('H:i') . " (" . $closestShiftEndTime->isoFormat('D MMMM') . ").");
-                }
+            // Block if too early (more than 1 hour before)
+            if ($type === 'in' && $now->lt((clone $shiftStartTime)->subMinutes(60))) {
+                return back()->with('error', "Maaf, absen untuk shift $shiftName belum dibuka. Silakan absen mulai pukul " . (clone $shiftStartTime)->subMinutes(60)->format('H:i') . ".");
+            }
 
-                // Block if too early (more than 1 hour before)
-                if ($type === 'in' && $now->lt((clone $closestShiftStartTime)->subMinutes(60))) {
-                    return back()->with('error', "Maaf, absen untuk shift $shiftName belum dibuka. Silakan absen mulai pukul " . (clone $closestShiftStartTime)->subMinutes(60)->format('H:i') . ".");
-                }
-
-                if ($now->gt($closestShiftStartTime)) {
-                    $status = 'Terlambat';
-                }
+            if ($now->gt($shiftStartTime)) {
+                $status = 'Terlambat';
             }
         }
 
@@ -531,23 +530,10 @@ class PresenceController extends Controller
             return null;
         }
 
-        $normalizedShifts = [];
-        $sourceShifts = is_array($local?->available_shifts) ? $local->available_shifts : [];
-        foreach ($sourceShifts as $shift) {
-            if (is_array($shift)) {
-                $normalizedShifts[] = $shift;
-                continue;
-            }
-            if (is_object($shift)) {
-                $normalizedShifts[] = (array) $shift;
-            }
-        }
-
         return (object) [
             'id' => (int) $unitId,
             'name' => $user->unit ?? null,
             'working_days' => is_array($local?->working_days) ? $local->working_days : [],
-            'available_shifts' => $normalizedShifts,
         ];
     }
 

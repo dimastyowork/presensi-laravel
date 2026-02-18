@@ -4,7 +4,6 @@
 @section('content')
     <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
         <div class="relative flex h-screen w-full flex-col justify-center sm:p-0 lg:flex-row dark:bg-gray-900">
-            <!-- Form -->
             <div class="flex w-full flex-1 flex-col lg:w-1/2">
                 <div class="mx-auto w-full max-w-md pt-10">
                     <a href="/"
@@ -68,7 +67,6 @@
                             <form method="POST" action="{{ route('login.submit') }}">
                                 @csrf
                                 <div class="space-y-5">
-                                    <!-- ID User -->
                                     <div>
                                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                             ID User<span class="text-error-500">*</span>
@@ -146,19 +144,14 @@
 
             <div class="bg-brand-950 relative hidden h-full w-full items-center lg:grid lg:w-1/2 dark:bg-white/5">
                 <div class="z-1 flex items-center justify-center">
-                    <!-- ===== Common Grid Shape Start ===== -->
                     <x-common.common-grid-shape/>
                     <div class="flex max-w-xs flex-col items-center">
                         <a href="/" class="mb-8 block">
                             <img class="w-200 h-auto" src="./images/logo/logo-header.svg" alt="Logo" />
                         </a>
-                        <!-- <p class="text-center text-gray-400 dark:text-white/60">
-                            Free and Open-Source Tailwind CSS Admin Dashboard Template
-                        </p> -->
                     </div>
                 </div>
             </div>
-            <!-- Toggler -->
             <div class="fixed right-6 bottom-6 z-50">
                 <button
                     class="bg-brand-500 hover:bg-brand-600 inline-flex size-14 items-center justify-center rounded-full text-white transition-colors"

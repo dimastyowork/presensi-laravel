@@ -4,7 +4,6 @@
 @section('content')
     <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
         <div class="relative flex h-screen w-full flex-col justify-center sm:p-0 lg:flex-row dark:bg-gray-900">
-            <!-- Form -->
             <div class="flex w-full flex-1 flex-col lg:w-1/2">
                 <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4">
                     <div>
@@ -84,7 +83,6 @@
                 </div>
             </div>
 
-            <!-- Right Side (Visual) -->
             <div class="relative hidden h-full w-1/2 items-center lg:flex bg-brand-600 dark:bg-white/5 overflow-hidden">
                 <div class="absolute inset-0 z-0">
                     <x-common.common-grid-shape/>
@@ -98,7 +96,6 @@
                         Sistem kehadiran digital mutakhir untuk efisiensi dan transparansi operasional Rumah Sakit Asa Bunda.
                     </p>
                 </div>
-                <!-- Light/Dark Toggle -->
                 <div class="absolute bottom-6 right-6 z-20">
                     <button @click.prevent="$store.theme.toggle()" class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-all hover:bg-white/20">
                         <svg x-show="$store.theme.theme === 'light'" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
