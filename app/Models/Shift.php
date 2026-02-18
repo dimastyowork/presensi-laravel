@@ -13,6 +13,11 @@ class Shift extends Model
         'name',
         'start_time',
         'end_time',
+        'working_days',
+    ];
+
+    protected $casts = [
+        'working_days' => 'array',
     ];
 
     public function users()

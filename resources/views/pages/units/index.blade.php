@@ -8,14 +8,8 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Manajemen <span class="text-brand">Unit</span></h1>
-            <p class="page-subtitle">Kelola unit kerja dan shift yang tersedia</p>
+            <p class="page-subtitle">Data unit ditarik langsung dari Auth/SSO</p>
         </div>
-        <a href="{{ route('units.create') }}" class="btn-primary">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Tambah Unit
-        </a>
     </div>
 
     <!-- Success Message -->
@@ -55,9 +49,7 @@
                     <tr>
                         <th>No</th>
                         <th>Nama Unit</th>
-                        <th>Hari Kerja</th>
                         <th>Dibuat</th>
-                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -65,53 +57,18 @@
                     <tr>
                         <td>{{ $units->firstItem() + $index }}</td>
                         <td class="font-semibold">{{ $unit->name }}</td>
-                        <td>
-                            @if($unit->working_days && count($unit->working_days) > 0)
-                                <div class="days-container">
-                                    @foreach($unit->working_days as $day)
-                                        <span class="day-badge">
-                                            {{ $day }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            @else
-                                <span class="text-dim">Semua Hari</span>
-                            @endif
-                        </td>
                         <td>{{ $unit->created_at->isoFormat('D MMM Y') }}</td>
-                        <td>
-                            <div class="action-buttons">
-                                @if($unit->id)
-                                <a href="{{ route('units.edit', $unit->id) }}" class="btn-action edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </a>
-                                <form action="{{ route('units.destroy', $unit->id) }}" method="POST" class="inline-block" id="delete-form-{{ $unit->id }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn-action delete" onclick="confirmDelete('delete-form-{{ $unit->id }}')">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                    </button>
-                                </form>
-                                @else
-                                <span class="text-dim">N/A</span>
-                                @endif
-                            </div>
-                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="3" class="empty-state">
                             <div class="empty-icon">
                                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                 </svg>
                             </div>
                             <p class="empty-text">Belum ada data unit</p>
-                            <p class="empty-subtext">Klik tombol "Tambah Unit" untuk menambahkan unit baru</p>
+                            <p class="empty-subtext">Data unit dari Auth/SSO tidak ditemukan.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -387,25 +344,6 @@
         font-size: 1rem;
     }
 
-    .btn-primary {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
-        background: var(--brand-blue);
-        color: white;
-        border-radius: 12px;
-        font-weight: 700;
-        text-decoration: none;
-        transition: all 0.3s;
-    }
-
-    .btn-primary:hover {
-        background: var(--brand-blue-dark);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
-    }
-
     .alert-success {
         display: flex;
         align-items: center;
@@ -496,43 +434,6 @@
         font-style: italic;
     }
 
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-    }
-
-    .btn-action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .btn-action.edit {
-        background: rgba(59, 130, 246, 0.1);
-        color: var(--brand-blue);
-    }
-
-    .btn-action.edit:hover {
-        background: var(--brand-blue);
-        color: white;
-    }
-
-    .btn-action.delete {
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--brand-red);
-    }
-
-    .btn-action.delete:hover {
-        background: var(--brand-red);
-        color: white;
-    }
-
     .empty-state {
         text-align: center;
         padding: 60px 20px !important;
@@ -614,11 +515,6 @@
 
         .page-header {
             flex-direction: column;
-        }
-
-        .btn-primary {
-            width: 100%;
-            justify-content: center;
         }
 
         .data-table {

@@ -56,6 +56,7 @@
                         <th>Nama Shift</th>
                         <th>Jam Masuk</th>
                         <th>Jam Pulang</th>
+                        <th>Hari Shift</th>
                         <th>Dibuat</th>
                         <th>Aksi</th>
                     </tr>
@@ -74,6 +75,17 @@
                             <span class="time-badge out">
                                 {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}
                             </span>
+                        </td>
+                        <td>
+                            @if(is_array($shift->working_days) && count($shift->working_days) > 0)
+                                <div class="days-container">
+                                    @foreach($shift->working_days as $day)
+                                        <span class="day-badge">{{ $day }}</span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-dim">Semua Hari</span>
+                            @endif
                         </td>
                         <td>{{ $shift->created_at->isoFormat('D MMM Y') }}</td>
                         <td>
@@ -97,7 +109,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
                             <div class="empty-icon">
                                 <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -112,145 +124,227 @@
             </table>
         </div>
 
-        @if($shifts->hasPages())
-        <div class="pagination-wrapper">
-            <div class="flex justify-between items-center">
-                <div class="footer-info">
-                   Menampilkan {{ $shifts->firstItem() }} sampai {{ $shifts->lastItem() }} dari {{ $shifts->total() }} entri
-                </div>
-                <div>
-                     <form method="GET" action="{{ route('shifts.index') }}" class="flex items-center gap-2 mr-4">
-                        <span class="text-sm text-gray-500">Per halaman:</span>
-                        <select name="per_page" onchange="this.form.submit()" class="footer-select">
-                            <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
-                            <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
-                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
-                        </select>
-                        @if(request('search'))
-                            <input type="hidden" name="search" value="{{ request('search') }}">
-                        @endif
-                    </form>
-                </div>
+        <div class="table-footer glass">
+            <div class="per-page-footer">
+                <form action="{{ route('shifts.index') }}" method="GET" id="perPageForm">
+                    @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <label for="per_page">Tampilkan:</label>
+                    <select name="per_page" onchange="this.form.submit()" class="footer-select">
+                        <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </form>
+            </div>
+            @if($shifts->hasPages())
+            <div class="pagination-wrapper">
                 {{ $shifts->links() }}
             </div>
+            @endif
         </div>
-        @endif
     </div>
 </div>
 
-@push('styles')
+@push('scripts')
 <style>
+    :root {
+        --brand-blue: #3b82f6;
+        --brand-blue-dark: #2563eb;
+        --brand-green: #10b981;
+        --brand-red: #ef4444;
+        --brand-yellow: #f59e0b;
+        --text-main: #1e293b;
+        --text-secondary: #64748b;
+        --text-dim: #94a3b8;
+        --card-bg: #ffffff;
+        --card-border: rgba(0, 0, 0, 0.08);
+        --glass-bg: rgba(255, 255, 255, 0.8);
+        --hover-bg: rgba(0, 0, 0, 0.03);
+        --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .dark {
+        --text-main: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-dim: #64748b;
+        --card-bg: #1f2937;
+        --card-border: rgba(255, 255, 255, 0.08);
+        --glass-bg: rgba(31, 41, 55, 0.8);
+        --hover-bg: rgba(255, 255, 255, 0.05);
+        --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
     .shift-management-container {
-        padding: 85px 30px 40px;
         max-width: 1400px;
         margin: 0 auto;
+        padding: 60px 20px 40px;
+        font-family: 'Outfit', sans-serif;
     }
 
     .page-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
+        align-items: flex-start;
+        margin-bottom: 40px;
+        flex-wrap: wrap;
+        gap: 20px;
     }
 
     .page-title {
-        font-size: 1.875rem;
-        font-weight: 800;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 900;
+        letter-spacing: -2px;
         color: var(--text-main);
-        letter-spacing: -0.025em;
+        margin: 0;
     }
 
-    .text-brand {
-        color: var(--brand-blue);
-    }
+    .text-brand { color: var(--brand-blue); }
 
     .page-subtitle {
         color: var(--text-secondary);
-        margin-top: 4px;
+        margin-top: 8px;
+        font-size: 1rem;
     }
 
     .btn-primary {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 8px;
+        padding: 12px 24px;
         background: var(--brand-blue);
         color: white;
-        padding: 12px 20px;
         border-radius: 12px;
-        font-weight: 600;
-        transition: all 0.3s;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        font-weight: 700;
         text-decoration: none;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
     }
 
     .btn-primary:hover {
         background: var(--brand-blue-dark);
         transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
     }
 
     .search-section {
+        margin-bottom: 24px;
         padding: 24px;
-        border-radius: 16px;
-        margin-bottom: 30px;
+        border-radius: 20px;
+        background: var(--glass-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 8px 32px var(--shadow-color);
     }
 
     .search-form {
         display: flex;
-        gap: 12px;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
     .search-input-wrapper {
-        flex: 1;
         position: relative;
+        flex: 1;
+        min-width: 300px;
     }
 
     .search-icon {
         position: absolute;
-        left: 14px;
+        left: 16px;
         top: 50%;
         transform: translateY(-50%);
         color: var(--text-dim);
+        transition: color 0.3s;
     }
 
     .search-input {
         width: 100%;
-        padding: 12px 12px 12px 44px;
+        padding: 14px 14px 14px 48px;
         background: var(--hover-bg);
         border: 1px solid var(--card-border);
-        border-radius: 12px;
+        border-radius: 14px;
         color: var(--text-main);
-        transition: all 0.3s;
+        font-size: 0.95rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .search-input:focus {
-        border-color: var(--brand-blue);
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         outline: none;
+        border-color: var(--brand-blue);
+        background: var(--card-bg);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .search-input:focus ~ .search-icon {
+        color: var(--brand-blue);
     }
 
     .btn-search {
-        background: var(--text-main);
+        padding: 14px 28px;
+        background: var(--brand-blue);
         color: white;
-        padding: 0 24px;
-        border-radius: 12px;
-        font-weight: 600;
         border: none;
+        border-radius: 14px;
+        font-weight: 700;
         cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-search:hover {
+        background: var(--brand-blue-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
     .btn-reset {
-        display: inline-flex;
-        align-items: center;
+        padding: 14px 28px;
+        background: var(--hover-bg);
         color: var(--text-secondary);
-        padding: 0 16px;
-        font-weight: 500;
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        font-weight: 700;
         text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-reset:hover {
+        background: var(--card-bg);
+        border-color: var(--brand-red);
+        color: var(--brand-red);
+        transform: translateY(-2px);
+    }
+
+    .alert-success {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 12px;
+        color: var(--brand-green);
+        margin-bottom: 24px;
+        font-weight: 600;
     }
 
     .table-container {
-        border-radius: 20px;
+        background: var(--glass-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 24px;
         overflow: hidden;
+        backdrop-filter: blur(20px);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
     }
 
     .data-table {
@@ -258,25 +352,33 @@
         border-collapse: collapse;
     }
 
-    .data-table th {
+    .data-table thead {
         background: var(--hover-bg);
-        padding: 16px 24px;
+        border-bottom: 2px solid var(--card-border);
+    }
+
+    .data-table th {
+        padding: 16px;
         text-align: left;
-        font-size: 0.8125rem;
-        font-weight: 700;
-        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 900;
         color: var(--text-secondary);
-        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     .data-table td {
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--card-border);
+        padding: 16px;
         color: var(--text-main);
+        border-bottom: 1px solid var(--card-border);
     }
 
-    .data-table tr:last-child td {
-        border-bottom: none;
+    .data-table tbody tr {
+        transition: background 0.2s;
+    }
+
+    .data-table tbody tr:hover {
+        background: var(--hover-bg);
     }
 
     .time-badge {
@@ -289,12 +391,34 @@
 
     .time-badge.in {
         background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
+        color: var(--brand-green);
     }
 
     .time-badge.out {
         background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
+        color: var(--brand-yellow);
+    }
+
+    .days-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .day-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--brand-blue);
+    }
+
+    .text-dim {
+        color: var(--text-dim);
+        font-size: 0.875rem;
     }
 
     .action-buttons {
@@ -309,6 +433,8 @@
         width: 36px;
         height: 36px;
         border-radius: 8px;
+        border: none;
+        cursor: pointer;
         transition: all 0.3s;
     }
 
@@ -325,8 +451,6 @@
     .btn-action.delete {
         background: rgba(239, 68, 68, 0.1);
         color: var(--brand-red);
-        border: none;
-        cursor: pointer;
     }
 
     .btn-action.delete:hover {
@@ -336,51 +460,190 @@
 
     .empty-state {
         text-align: center;
-        padding: 60px 0 !important;
+        padding: 80px 24px !important;
+        vertical-align: middle;
     }
 
     .empty-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 24px;
         color: var(--text-dim);
-        margin-bottom: 16px;
+        opacity: 0.6;
     }
 
     .empty-text {
-        font-size: 1.125rem;
-        font-weight: 700;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
     }
 
     .empty-subtext {
         color: var(--text-secondary);
+        font-size: 1rem;
+        max-width: 400px;
+        margin: 0 auto;
     }
 
-    .pagination-wrapper {
-        padding: 20px 24px;
+    .table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
         border-top: 1px solid var(--card-border);
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .per-page-footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .per-page-footer form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .footer-select {
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 8px 16px;
+        background: var(--hover-bg);
         border: 1px solid var(--card-border);
-        background: var(--card-bg);
+        border-radius: 10px;
         color: var(--text-main);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        appearance: none;
+        background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
     }
 
-    .alert-success {
-        padding: 16px 24px;
-        border-radius: 12px;
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
+    .dark .footer-select {
+        background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\");
+    }
+
+    .footer-select:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        background-color: var(--card-bg);
+    }
+
+    .pagination-wrapper nav {
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination-wrapper .text-sm {
+        color: var(--text-secondary) !important;
+    }
+
+    .pagination-wrapper .font-medium {
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-wrapper .text-gray-700,
+    .dark .pagination-wrapper .text-gray-500 {
+        color: var(--text-secondary) !important;
+    }
+
+    .pagination-wrapper nav > div:first-child {
+        display: flex;
+    }
+
+    .pagination-wrapper nav > div:last-child {
+        display: none;
+    }
+
+    @media (min-width: 640px) {
+        .pagination-wrapper nav > div:first-child {
+            display: none !important;
+        }
+
+        .pagination-wrapper nav > div:last-child {
+            display: flex !important;
+        }
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .page-item .page-link {
         display: flex;
         align-items: center;
-        gap: 12px;
-        border-left: 4px solid #10b981;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: var(--hover-bg);
+        border: 1px solid transparent;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .page-item.active .page-link {
+        background: var(--brand-blue);
+        color: white;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    }
+
+    .page-item.disabled .page-link {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-item:not(.active):not(.disabled) .page-link:hover {
+        background: var(--card-bg);
+        border-color: var(--brand-blue);
+        color: var(--brand-blue);
     }
 
     .glass {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(20px);
+    }
+
+    @media (max-width: 768px) {
+        .shift-management-container {
+            padding: 40px 15px 30px;
+        }
+
+        .page-header {
+            flex-direction: column;
+        }
+
+        .btn-primary {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .data-table {
+            font-size: 0.875rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 8px;
+        }
     }
 </style>
 @endpush

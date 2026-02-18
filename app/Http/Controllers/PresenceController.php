@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presence;
-use App\Models\Shift;
 use App\Models\UserShift;
-use App\Models\Unit as LocalUnit;
 use App\Services\SsoApiService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -13,7 +11,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class PresenceController extends Controller
@@ -27,7 +24,6 @@ class PresenceController extends Controller
     public function index(Request $request)
     {
         $userId = Auth::id(); 
-        $user = Auth::user();
         $now = Carbon::now();
         $today = Carbon::today();
         
@@ -46,18 +42,19 @@ class PresenceController extends Controller
                 ->first();
         }
 
-        $unit = $this->resolveUserUnit($user);
-        
-        $userShift = UserShift::with('shift')->where('user_id', $userId)->first();
-        $allShifts = Shift::all();
-        $isShiftSelected = ($userShift && $userShift->shift);
+        $userShifts = UserShift::with('shift')
+            ->where('user_id', $userId)
+            ->orderByDesc('is_active')
+            ->get();
+        $activeUserShift = $userShifts->firstWhere('is_active', true) ?? $userShifts->first();
+        $isShiftSelected = ($activeUserShift && $activeUserShift->shift);
 
-        $isWorkingDay = false;
+        $isWorkingDay = true;
         $dayName = $today->isoFormat('dddd');
-        
-        // Use unit's working days, or default to all days
-        $workingDays = $unit->working_days ?? ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-        $isWorkingDay = $this->isWorkingDay($today, $workingDays);
+        if ($isShiftSelected) {
+            $shiftWorkingDays = is_array($activeUserShift->shift->working_days ?? null) ? $activeUserShift->shift->working_days : [];
+            $isWorkingDay = $this->isWorkingDay($today, $shiftWorkingDays);
+        }
 
         $activeShiftInfo = [
             'is_expired' => false,
@@ -69,7 +66,7 @@ class PresenceController extends Controller
         ];
 
         if ($isShiftSelected) {
-            $shift = $userShift->shift;
+            $shift = $activeUserShift->shift;
             $tS = Carbon::parse($today->toDateString() . ' ' . $shift->start_time);
             $diffs = [
                 ['time' => $tS, 'logical' => $today],
@@ -105,33 +102,26 @@ class PresenceController extends Controller
         $settings = \App\Models\GlobalSetting::all()->pluck('value', 'key');
 
         $selectedType = $request->query('type');
-        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isShiftSelected', 'allShifts'));
+        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isShiftSelected'));
     }
 
     public function updateShift(Request $request)
     {
-        $request->validate([
-            'shift_id' => 'required|exists:shifts,id'
-        ]);
-
-        UserShift::updateOrCreate(
-            ['user_id' => Auth::id()],
-            ['shift_id' => $request->shift_id]
-        );
-
-        return back()->with('success', 'Shift berhasil dipilih. Silakan lakukan absen.');
+        return back()->with('error', 'Shift kerja ditetapkan oleh admin IT/HRD. Pengguna tidak dapat mengganti shift sendiri.');
     }
 
     public function store(Request $request)
     {
         $userId = Auth::id();
-        $user = Auth::user();
         $now = Carbon::now();
         $type = $request->input('type', 'in');
-        $unit = $this->resolveUserUnit($user);
 
         // Fetch user shift
-        $userShift = UserShift::with('shift')->where('user_id', $userId)->first();
+        $userShifts = UserShift::with('shift')
+            ->where('user_id', $userId)
+            ->orderByDesc('is_active')
+            ->get();
+        $userShift = $userShifts->firstWhere('is_active', true) ?? $userShifts->first();
         
         if ($type === 'in' && (!$userShift || !$userShift->shift)) {
             return back()->with('error', 'Anda belum memilih shift kerja. Silakan pilih shift terlebih dahulu.');
@@ -141,10 +131,12 @@ class PresenceController extends Controller
         $shiftName = null;
         $status = 'Hadir';
         $logicalDate = Carbon::today();
+        $shiftWorkingDays = [];
         
         if ($userShift && $userShift->shift) {
             $shift = $userShift->shift;
             $shiftName = $shift->name;
+            $shiftWorkingDays = is_array($shift->working_days ?? null) ? $shift->working_days : [];
             
             $todayStart = Carbon::parse(Carbon::today()->toDateString() . ' ' . $shift->start_time);
             $yesterdayStart = (clone $todayStart)->subDay();
@@ -186,10 +178,10 @@ class PresenceController extends Controller
         // 2. Handle Clock In
         if ($type === 'in') {
             // Check Working Day Restriction based on Logical Date
-            if ($unit && count($unit->working_days) > 0) {
+            if (count($shiftWorkingDays) > 0) {
                 $dayName = $logicalDate->isoFormat('dddd');
-                if (!$this->isWorkingDay($logicalDate, $unit->working_days)) {
-                    return back()->with('error', "Maaf, hari $dayName bukan hari kerja untuk unit Anda.");
+                if (!$this->isWorkingDay($logicalDate, $shiftWorkingDays)) {
+                    return back()->with('error', "Maaf, hari $dayName tidak termasuk hari kerja untuk shift Anda.");
                 }
             }
 
@@ -503,38 +495,6 @@ class PresenceController extends Controller
                 'unit' => $user['unit'] ?? '-',
             ]);
         }
-    }
-
-    private function resolveUserUnit($user): ?object
-    {
-        if (!$user) {
-            return null;
-        }
-
-        $unitId = $user->unit_id ?? null;
-        if (empty($unitId) || !Schema::hasColumn('units', 'sso_unit_id')) {
-            Log::warning('User unit_id is missing or units.sso_unit_id column unavailable.', [
-                'user_id' => $user->id ?? null,
-                'user_unit_id' => $unitId,
-            ]);
-            return null;
-        }
-
-        $local = LocalUnit::where('sso_unit_id', (int) $unitId)->first();
-
-        if (!$local) {
-            Log::warning('Local unit schedule not found by sso_unit_id.', [
-                'user_id' => $user->id ?? null,
-                'user_unit_id' => $unitId,
-            ]);
-            return null;
-        }
-
-        return (object) [
-            'id' => (int) $unitId,
-            'name' => $user->unit ?? null,
-            'working_days' => is_array($local?->working_days) ? $local->working_days : [],
-        ];
     }
 
     private function isWorkingDay(Carbon $date, array $workingDays): bool

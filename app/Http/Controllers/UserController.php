@@ -7,6 +7,7 @@ use App\Models\UserShift;
 use App\Services\SsoApiService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -43,7 +44,11 @@ class UserController extends Controller
 
         $pagedItemsRaw = collect($itemsRaw)->values();
         $userIds = $pagedItemsRaw->map(fn($item) => $item['id'] ?? $item['ID'] ?? $item['id_user'] ?? $item['user_id'] ?? null)->filter()->toArray();
-        $userShifts = UserShift::with('shift')->whereIn('user_id', $userIds)->get()->keyBy('user_id');
+        $userShifts = UserShift::with('shift')
+            ->whereIn('user_id', $userIds)
+            ->orderByDesc('is_active')
+            ->get()
+            ->groupBy('user_id');
 
         $items = $pagedItemsRaw->map(function($item) use ($userShifts) {
             $obj = (object) $item;
@@ -53,9 +58,11 @@ class UserController extends Controller
             $obj->unit = $obj->unit ?? $obj->nama_unit ?? $obj->unit_name ?? '-';
             
             // Attach shift info
-            $shiftRecord = $userShifts->get($obj->id);
-            $obj->shift = $shiftRecord->shift->name ?? '-';
-            $obj->shift_id = $shiftRecord->shift_id ?? null;
+            $shiftRecords = $userShifts->get($obj->id, collect());
+            $shiftNames = $shiftRecords->pluck('shift.name')->filter()->values();
+            $obj->shift = $shiftNames->isNotEmpty() ? $shiftNames->implode(', ') : '-';
+            $obj->shift_ids = $shiftRecords->pluck('shift_id')->map(fn($id) => (int) $id)->values()->all();
+            $obj->active_shift_id = $shiftRecords->firstWhere('is_active', true)->shift_id ?? ($shiftRecords->first()->shift_id ?? null);
 
             if (isset($obj->created_at) && is_string($obj->created_at)) {
                 $obj->created_at = \Carbon\Carbon::parse($obj->created_at);
@@ -84,17 +91,34 @@ class UserController extends Controller
     {
         $request->validate([
             'user_id' => 'required',
-            'shift_id' => 'nullable|exists:shifts,id'
+            'shift_ids' => 'nullable|array',
+            'shift_ids.*' => 'exists:shifts,id',
         ]);
 
-        if ($request->shift_id) {
-            UserShift::updateOrCreate(
-                ['user_id' => $request->user_id],
-                ['shift_id' => $request->shift_id]
-            );
-        } else {
+        $shiftIds = collect($request->input('shift_ids', []))
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        DB::transaction(function () use ($request, $shiftIds) {
             UserShift::where('user_id', $request->user_id)->delete();
-        }
+
+            if ($shiftIds->isEmpty()) {
+                return;
+            }
+
+            $rows = $shiftIds->values()->map(function ($shiftId, $index) use ($request) {
+                return [
+                    'user_id' => (int) $request->user_id,
+                    'shift_id' => $shiftId,
+                    'is_active' => $index === 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })->all();
+
+            UserShift::insert($rows);
+        });
 
         return response()->json(['success' => true, 'message' => 'Shift updated successfully']);
     }
@@ -156,8 +180,7 @@ class UserController extends Controller
             ->values();
 
         $shifts = Shift::all();
-        $userShift = UserShift::where('user_id', $id)->first();
-        $user->shift_id = $userShift->shift_id ?? null;
+        $user->shift_ids = UserShift::where('user_id', $id)->pluck('shift_id')->map(fn($id) => (int) $id)->all();
 
         return view('pages.users.edit', compact('user', 'units', 'shifts'));
     }
@@ -169,6 +192,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'unit' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:6|confirmed',
+            'shift_ids' => 'nullable|array',
+            'shift_ids.*' => 'exists:shifts,id',
         ]);
 
         $result = $this->ssoService->updateUser($id, $validated);
@@ -177,15 +202,7 @@ class UserController extends Controller
             return back()->withInput()->with('error', $result['message'] ?? 'Gagal mengupdate user di SSO');
         }
 
-        // Handle Shift update
-        if ($request->filled('shift_id')) {
-            UserShift::updateOrCreate(
-                ['user_id' => $id],
-                ['shift_id' => $request->shift_id]
-            );
-        } else {
-            UserShift::where('user_id', $id)->delete();
-        }
+        $this->syncUserShifts((int) $id, $request->input('shift_ids', []));
 
         return redirect()->route('users.index')->with('success', 'User berhasil diupdate!');
     }
@@ -194,5 +211,34 @@ class UserController extends Controller
     {
         $this->ssoService->deleteUser($id);
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus dari SSO!');
+    }
+
+    private function syncUserShifts(int $userId, array $shiftIds): void
+    {
+        $normalized = collect($shiftIds)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        DB::transaction(function () use ($userId, $normalized) {
+            UserShift::where('user_id', $userId)->delete();
+
+            if ($normalized->isEmpty()) {
+                return;
+            }
+
+            $rows = $normalized->map(function ($shiftId, $index) use ($userId) {
+                return [
+                    'user_id' => $userId,
+                    'shift_id' => $shiftId,
+                    'is_active' => $index === 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })->all();
+
+            UserShift::insert($rows);
+        });
     }
 }

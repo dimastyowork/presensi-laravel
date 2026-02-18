@@ -3,45 +3,11 @@
 
 @section('content')
 <div x-data="{ 
-    step: '{{ $isShiftSelected ? 'choice' : 'shift_selection' }}', 
+    step: 'choice', 
     type: 'in',
     hasIn: {{ ($presence && $presence->time_in) ? 'true' : 'false' }},
     hasOut: {{ ($presence && $presence->time_out) ? 'true' : 'false' }},
 }" class="presence-container">
-
-    <template x-if="step === 'shift_selection'">
-        <div class="shift-selection-screen animate-fade-in">
-            <div class="welcome-header">
-                <h1 class="welcome-title">Pilih <span class="text-brand">Shift Anda</span></h1>
-                <p class="welcome-subtitle">Silakan pilih shift kerja Anda untuk hari ini</p>
-            </div>
-
-            <div class="shift-cards-container">
-                <form action="{{ route('presence.update_shift') }}" method="POST" id="shift-form">
-                    @csrf
-                    <input type="hidden" name="shift_id" id="selected-shift-id">
-                    
-                    <div class="shift-grid">
-                        @foreach($allShifts as $shift)
-                        <div @click="document.getElementById('selected-shift-id').value = '{{ $shift->id }}'; document.getElementById('shift-form').submit()" 
-                             class="shift-card-item glass">
-                            <div class="shift-info">
-                                <h3 class="shift-name">{{ $shift->name }}</h3>
-                                <div class="shift-time">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5"/></svg>
-                                    <span>{{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}</span>
-                                </div>
-                            </div>
-                            <div class="shift-arrow">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3"/></svg>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </form>
-            </div>
-        </div>
-    </template>
 
     <template x-if="step === 'choice'">
         <div class="choice-screen animate-fade-in">
@@ -61,6 +27,15 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3"/></svg>
                     </div>
                     <span class="alert-text">{{ session('error') }}</span>
+                </div>
+            @endif
+
+            @if(!$isShiftSelected)
+                <div class="alert alert-warning animate-pulse">
+                    <div class="alert-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-width="2.5"/></svg>
+                    </div>
+                    <span class="alert-text">Shift kerja Anda belum ditetapkan. Silakan hubungi admin IT/HRD.</span>
                 </div>
             @endif
 
@@ -120,8 +95,8 @@
             @endif
 
             <div class="choice-cards">
-                <div @click="if(!hasIn && {{ $isWorkingDay ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) { type = 'in'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
-                    :class="(hasIn || !{{ $isWorkingDay ? 'true' : 'false' }} || {{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} || {{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-blue'"
+                <div @click="if(!hasIn && {{ $isShiftSelected ? 'true' : 'false' }} && {{ $isWorkingDay ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) { type = 'in'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
+                    :class="(hasIn || !{{ $isShiftSelected ? 'true' : 'false' }} || !{{ $isWorkingDay ? 'true' : 'false' }} || {{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} || {{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-blue'"
                     class="presence-card">
                     
                     <div class="card-icon-wrapper">
@@ -138,6 +113,8 @@
                             <span>
                                 @if(!$isWorkingDay)
                                     Bukan hari kerja
+                                @elseif(!$isShiftSelected)
+                                    Shift ditetapkan admin
                                 @elseif($activeShiftInfo['is_expired'])
                                     Shift sudah berakhir ({{ $activeShiftInfo['end_time'] ? $activeShiftInfo['end_time']->format('H:i') : '' }})
                                 @elseif($activeShiftInfo['is_too_early'])
@@ -182,15 +159,6 @@
                     </template>
                 </div>
             </div>
-
-            @if(!$presence || !$presence->time_in)
-            <div class="mt-12 animate-fade-in">
-                <button @click="step = 'shift_selection'" class="btn-change-shift glass">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5"/></svg>
-                    <span>Ganti Shift Kerja</span>
-                </button>
-            </div>
-            @endif
 
             @if($presence)
             <div class="summary-container animate-slide-up">

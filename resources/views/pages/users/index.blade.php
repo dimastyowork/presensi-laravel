@@ -48,8 +48,8 @@
                         <th>NIP</th>
                         <th>Nama</th>
                         <th>Unit</th>
-                        <th>Shift</th>
                         <th>Terdaftar</th>
+                        <th class="shift-col-head">Shift</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -60,8 +60,18 @@
                         <td><span class="nip-badge">{{ $user->nip ?? '-' }}</span></td>
                         <td class="font-semibold">{{ $user->name }}</td>
                         <td><span class="unit-badge">{{ $user->unit ?? '-' }}</span></td>
-                        <td><span class="shift-badge">{{ $user->shift ?? '-' }}</span></td>
                         <td>{{ $user->created_at->isoFormat('D MMM Y') }}</td>
+                        <td class="shift-col-cell">
+                            <div class="shift-quick-grid" data-user="{{ $user->id }}">
+                                @foreach($allShifts as $shift)
+                                    @php $checked = in_array((int) $shift->id, $user->shift_ids ?? [], true); @endphp
+                                    <label class="shift-quick-item {{ $checked ? 'active' : '' }}">
+                                        <input type="checkbox" class="shift-quick-checkbox" data-user-id="{{ $user->id }}" data-shift-id="{{ $shift->id }}" {{ $checked ? 'checked' : '' }}>
+                                        <span>{{ $shift->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </td>
                         <td>
                             <div class="action-buttons">
                                 @if($user->id)
@@ -87,7 +97,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
                             <div class="empty-icon">
                                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -477,6 +487,48 @@
         font-size: 0.875rem;
     }
 
+    .shift-quick-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 170px;
+    }
+
+    .shift-quick-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+        background: var(--hover-bg);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .shift-quick-item.active {
+        color: var(--brand-blue);
+        border-color: var(--brand-blue);
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .shift-quick-item input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--brand-blue);
+    }
+
+    .shift-col-head,
+    .shift-col-cell {
+        text-align: right;
+    }
+
+    .shift-col-cell .shift-quick-grid {
+        align-items: flex-end;
+    }
+
     .action-buttons {
         display: flex;
         gap: 8px;
@@ -620,5 +672,69 @@
         }
     }
 </style>
+<script>
+    function confirmDelete(formId) {
+        if (confirm('Yakin ingin menghapus user ini?')) {
+            document.getElementById(formId).submit();
+        }
+    }
+
+    function syncShiftItemState(userId) {
+        const group = document.querySelectorAll('.shift-quick-checkbox[data-user-id="' + userId + '"]');
+        group.forEach((input) => {
+            const item = input.closest('.shift-quick-item');
+            if (item) {
+                item.classList.toggle('active', input.checked);
+            }
+        });
+    }
+
+    async function updateUserShift(userId, shiftIds) {
+        const body = new URLSearchParams({
+            _token: '{{ csrf_token() }}',
+            user_id: userId
+        });
+        shiftIds.forEach((id) => body.append('shift_ids[]', id));
+
+        const response = await fetch('{{ route('users.quick-update-shift') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: body.toString()
+        });
+
+        if (!response.ok) {
+            throw new Error('Gagal update shift');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('.shift-quick-checkbox');
+
+        inputs.forEach((input) => {
+            input.addEventListener('change', async function () {
+                const userId = this.dataset.userId;
+                const group = document.querySelectorAll('.shift-quick-checkbox[data-user-id="' + userId + '"]');
+                const previousState = Array.from(group).map((el) => el.checked);
+                const selectedIds = Array.from(group)
+                    .filter((el) => el.checked)
+                    .map((el) => el.dataset.shiftId)
+                    .filter((id) => id !== '');
+                syncShiftItemState(userId);
+
+                try {
+                    await updateUserShift(userId, selectedIds);
+                } catch (error) {
+                    group.forEach((el, idx) => {
+                        el.checked = previousState[idx];
+                    });
+                    syncShiftItemState(userId);
+                    alert('Gagal memperbarui shift user. Coba lagi.');
+                }
+            });
+        });
+    });
+</script>
 @endpush
 @endsection

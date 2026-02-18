@@ -43,7 +43,9 @@ class ShiftController extends Controller
             'name' => 'required|string|max:255',
             'start_time' => 'required',
             'end_time' => 'required',
+            'working_days' => 'nullable|array',
         ]);
+        $validated['working_days'] = $request->input('working_days', []);
 
         Shift::create($validated);
 
@@ -75,7 +77,9 @@ class ShiftController extends Controller
             'name' => 'required|string|max:255',
             'start_time' => 'required',
             'end_time' => 'required',
+            'working_days' => 'nullable|array',
         ]);
+        $validated['working_days'] = $request->input('working_days', []);
 
         $shift->update($validated);
 

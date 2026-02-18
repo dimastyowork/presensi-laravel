@@ -68,15 +68,29 @@
                 <!-- Shift -->
                 <div class="form-group">
                     <label class="form-label">Shift Kerja</label>
-                    <select name="shift_id" class="form-input @error('shift_id') error @enderror">
-                        <option value="">Pilih Shift (Jika ada)</option>
+                    @php
+                        $selectedShifts = old('shift_ids', $user->shift_ids ?? []);
+                        $selectedShiftIds = collect($selectedShifts)->map(fn($id) => (int) $id)->values()->all();
+                    @endphp
+                    <div class="shift-checkbox-grid">
                         @foreach($shifts as $shift)
-                            <option value="{{ $shift->id }}" {{ old('shift_id', $user->shift_id) == $shift->id ? 'selected' : '' }}>
-                                {{ $shift->name }} ({{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }})
-                            </option>
+                            @php $isChecked = in_array((int) $shift->id, $selectedShiftIds, true); @endphp
+                            <label class="shift-checkbox-item {{ $isChecked ? 'active' : '' }}">
+                                <input type="checkbox" name="shift_ids[]" value="{{ $shift->id }}" class="shift-selector" {{ $isChecked ? 'checked' : '' }}>
+                                <span class="shift-name">{{ $shift->name }}</span>
+                                <span class="shift-time">{{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}</span>
+                                @if(is_array($shift->working_days) && count($shift->working_days) > 0)
+                                    <span class="shift-days">{{ implode(', ', $shift->working_days) }}</span>
+                                @else
+                                    <span class="shift-days">Semua hari</span>
+                                @endif
+                            </label>
                         @endforeach
-                    </select>
-                    @error('shift_id')
+                    </div>
+                    @error('shift_ids')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                    @error('shift_ids.*')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
@@ -342,6 +356,57 @@
         color: var(--brand-red);
     }
 
+    .shift-checkbox-grid {
+        display: grid;
+        gap: 10px;
+    }
+
+    .shift-checkbox-item {
+        display: grid;
+        grid-template-columns: 20px 1fr;
+        gap: 8px 10px;
+        padding: 10px 14px;
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        background: var(--input-bg);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .shift-checkbox-item.active {
+        border-color: var(--brand-blue);
+        background: rgba(59, 130, 246, 0.08);
+    }
+
+    .shift-checkbox-item input[type="checkbox"] {
+        grid-row: span 4;
+        width: 16px;
+        height: 16px;
+        margin-top: 2px;
+        accent-color: var(--brand-blue);
+    }
+
+    .shift-name {
+        color: var(--text-main);
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .shift-time {
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+    }
+
+    .shift-days {
+        color: var(--text-dim);
+        font-size: 0.75rem;
+    }
+
+    .shift-checkbox-item.checked {
+        border-color: var(--brand-blue);
+        background: rgba(59, 130, 246, 0.08);
+    }
+
     @media (max-width: 768px) {
         .user-form-container {
             padding: 40px 15px 30px;
@@ -374,5 +439,26 @@
         }
     }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = document.querySelectorAll('.shift-selector');
+
+        checkboxes.forEach((checkbox) => {
+            const item = checkbox.closest('.shift-checkbox-item');
+            if (item) {
+                item.classList.toggle('checked', checkbox.checked);
+                item.classList.toggle('active', checkbox.checked);
+            }
+
+            checkbox.addEventListener('change', function () {
+                const parent = this.closest('.shift-checkbox-item');
+                if (parent) {
+                    parent.classList.toggle('checked', this.checked);
+                    parent.classList.toggle('active', this.checked);
+                }
+            });
+        });
+    });
+</script>
 @endpush
 @endsection

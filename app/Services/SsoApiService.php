@@ -25,7 +25,7 @@ class SsoApiService
         $token = $this->token();
 
         if (empty($token)) {
-            \Illuminate\Support\Facades\Log::warning('SSO token is empty in SsoApiService::client().');
+            Log::warning('SSO token is empty in SsoApiService::client().');
         }
 
         return Http::withToken($token)

@@ -1,14 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Edit Shift')
+@section('title', 'Tambah Shift')
 
 @section('content')
 <div class="shift-form-container">
-    
-    <!-- Header -->
     <div class="page-header">
         <div>
-            <h1 class="page-title">Edit <span class="text-brand">Shift</span></h1>
-            <p class="page-subtitle">Perbarui informasi shift kerja</p>
+            <h1 class="page-title">Tambah <span class="text-brand">Shift</span></h1>
+            <p class="page-subtitle">Buat shift kerja baru</p>
         </div>
         <a href="{{ route('shifts.index') }}" class="btn-secondary">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,35 +16,30 @@
         </a>
     </div>
 
-    <!-- Form -->
     <div class="form-card glass">
-        <form action="{{ route('shifts.update', $shift->id) }}" method="POST">
+        <form action="{{ route('shifts.store') }}" method="POST">
             @csrf
-            @method('PUT')
-            
+
             <div class="form-grid">
-                <!-- Shift Name -->
                 <div class="form-group full-width">
                     <label class="form-label">Nama Shift <span class="required">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $shift->name) }}" class="form-input @error('name') error @enderror" placeholder="Contoh: Pagi, Siang, Malam, Full Day" required>
+                    <input type="text" name="name" value="{{ old('name') }}" class="form-input @error('name') error @enderror" placeholder="Contoh: Pagi, Siang, Malam, Full Day" required>
                     @error('name')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <!-- Start Time -->
                 <div class="form-group">
                     <label class="form-label">Jam Masuk <span class="required">*</span></label>
-                    <input type="time" name="start_time" value="{{ old('start_time', \Carbon\Carbon::parse($shift->start_time)->format('H:i')) }}" class="form-input @error('start_time') error @enderror" required>
+                    <input type="time" name="start_time" value="{{ old('start_time') }}" class="form-input @error('start_time') error @enderror" required>
                     @error('start_time')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <!-- End Time -->
                 <div class="form-group">
                     <label class="form-label">Jam Pulang <span class="required">*</span></label>
-                    <input type="time" name="end_time" value="{{ old('end_time', \Carbon\Carbon::parse($shift->end_time)->format('H:i')) }}" class="form-input @error('end_time') error @enderror" required>
+                    <input type="time" name="end_time" value="{{ old('end_time') }}" class="form-input @error('end_time') error @enderror" required>
                     @error('end_time')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
@@ -55,7 +48,7 @@
                 <div class="form-group full-width">
                     <label class="form-label">Hari Shift</label>
                     <p class="form-hint">Kosongkan jika shift ini berlaku setiap hari.</p>
-                    @php $currentDays = old('working_days', $shift->working_days ?? []); @endphp
+                    @php $currentDays = old('working_days', []); @endphp
                     <div class="days-checkbox-grid">
                         @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $day)
                             <label class="day-checkbox-item">
@@ -76,7 +69,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Simpan Perubahan
+                    Simpan Shift
                 </button>
                 <a href="{{ route('shifts.index') }}" class="btn-cancel">Batal</a>
             </div>
@@ -214,14 +207,6 @@
         margin-top: 4px;
     }
 
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        padding-top: 24px;
-        border-top: 1px solid var(--card-border);
-    }
-
     .days-checkbox-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -255,6 +240,14 @@
         font-size: 0.9375rem;
         font-weight: 600;
         color: var(--text-main);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid var(--card-border);
     }
 
     .btn-primary {
