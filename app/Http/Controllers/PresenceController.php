@@ -303,7 +303,8 @@ class PresenceController extends Controller
         $presences = Presence::where('user_id', $userId)
             ->orderBy('date', 'desc')
             ->orderBy('time_in', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         $presenceStats = Presence::where('user_id', $userId)
             ->get()
@@ -329,11 +330,20 @@ class PresenceController extends Controller
     {
         $query = Presence::query();
         
+        // Match view defaults: start of current month to today
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+
         if ($request->filled('start_date')) {
             $query->where('date', '>=', $request->start_date);
+        } else {
+            $query->where('date', '>=', $startDate);
         }
+
         if ($request->filled('end_date')) {
             $query->where('date', '<=', $request->end_date);
+        } else {
+            $query->where('date', '<=', $endDate);
         }
         
         if ($request->filled('status')) {
@@ -352,7 +362,6 @@ class PresenceController extends Controller
             }
         }
 
-        // Filter by user selection (Dropdown)
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
@@ -378,7 +387,10 @@ class PresenceController extends Controller
 
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        
+        // Final safeguard against showing more than perPage
         $pagedItems = $filteredPresences->forPage($currentPage, $perPage)->values();
+        
         $presences = new LengthAwarePaginator(
             $pagedItems,
             $filteredPresences->count(),

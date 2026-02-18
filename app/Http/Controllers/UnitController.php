@@ -20,31 +20,25 @@ class UnitController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->input('per_page', 10);
-        $request->merge(['per_page' => $perPage]);
-        $response = $this->ssoService->getUnits($request->all());
+        $currentPage = (int) $request->input('page', 1);
+
+        // Fetch ALL units to handle local pagination reliably
+        // IMPORTANT: We must strip 'page' from the params sent to SSO so it doesn't return an empty page 2.
+        $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
+        $response = $this->ssoService->getUnits($params);
         
         if (!isset($response['data'])) {
             \Illuminate\Support\Facades\Log::error('SSO API Unit Response Error', ['response' => $response]);
         }
-        // Detect pagination more robustly (support top-level or meta-nested)
-        $paginatedData = null;
-        if (isset($response['data']) && (isset($response['current_page']) || isset($response['meta']['current_page']))) {
-            $paginatedData = $response;
-            $itemsRaw = $response['data'];
-        } else if (isset($response['data']) && is_array($response['data']) && !isset($response['data'][0])) {
-            // Case where data is an object with current_page inside it (unlikely but possible)
-            $paginatedData = $response['data'];
-            $itemsRaw = $response['data']['data'] ?? [];
-        } else {
-            $itemsRaw = $response['data'] ?? $response ?? [];
+        
+        $itemsRaw = $response['data'] ?? $response ?? [];
+        if (isset($itemsRaw['data']) && is_array($itemsRaw['data'])) {
+            $itemsRaw = $itemsRaw['data'];
         }
 
         $items = collect($itemsRaw)->values()->map(function($item) {
             $obj = (object) $item;
-            // Robust ID normalization
             $obj->id = $obj->id ?? $obj->ID ?? $obj->id_unit ?? $obj->id_user ?? $obj->unit_id ?? null;
-            
-            // Normalize for view compatibility
             $obj->name = $obj->name ?? $obj->nama ?? $obj->nama_unit ?? 'N/A';
             $obj->working_days = is_array($obj->working_days ?? null) ? $obj->working_days : [];
             $obj->available_shifts = is_array($obj->available_shifts ?? null) ? $obj->available_shifts : [];
@@ -80,24 +74,20 @@ class UnitController extends Controller
             return $unit;
         });
 
-        if ($paginatedData) {
-            $total = (int) ($paginatedData['total'] ?? $paginatedData['meta']['total'] ?? $items->count());
-            $perPage = (int) ($request->input('per_page', $paginatedData['per_page'] ?? $paginatedData['meta']['per_page'] ?? 15));
-            $currentPage = (int) ($paginatedData['current_page'] ?? $paginatedData['meta']['current_page'] ?? 1);
+        // Local pagination logic
+        $total = $items->count();
+        $pagedItems = $items->forPage($currentPage, $perPage)->values();
 
-            $units = new LengthAwarePaginator(
-                $items,
-                $total,
-                $perPage,
-                $currentPage,
-                ['path' => $request->url(), 'query' => $request->query()]
-            );
-        } else {
-            $units = new LengthAwarePaginator($items->forPage(1, $perPage), $items->count(), $perPage, 1);
-        }
+        $units = new LengthAwarePaginator(
+            $pagedItems,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('pages.units.index', compact('units'));
-    }
+}
 
     public function create()
     {

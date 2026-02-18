@@ -18,31 +18,29 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->input('per_page', 10);
-        $request->merge(['per_page' => $perPage]);
-        $response = $this->ssoService->getUsers($request->all());
+        $currentPage = (int) $request->input('page', 1);
+        
+        // Fetch ALL users to handle local pagination reliably, 
+        // since SSO API might have a different default per_page (e.g. 15) 
+        // or ignore our per_page parameter. 
+        // IMPORTANT: We must strip 'page' from the params sent to SSO so it doesn't return an empty page 2.
+        $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
+        $response = $this->ssoService->getUsers($params);
         
         if (!isset($response['data'])) {
             \Illuminate\Support\Facades\Log::error('SSO API User Response Error', ['response' => $response]);
         }
-        // Detect pagination more robustly (support top-level or meta-nested)
-        $paginatedData = null;
-        if (isset($response['data']) && (isset($response['current_page']) || isset($response['meta']['current_page']))) {
-            $paginatedData = $response;
-            $itemsRaw = $response['data'];
-        } else if (isset($response['data']) && is_array($response['data']) && !isset($response['data'][0])) {
-            // Case where data is an object with current_page inside it (unlikely but possible)
-            $paginatedData = $response['data'];
-            $itemsRaw = $response['data']['data'] ?? [];
-        } else {
-            $itemsRaw = $response['data'] ?? $response ?? [];
+
+        // The API when called with 'all' => true usually returns the flat array in 'data' 
+        // or as the root response.
+        $itemsRaw = $response['data'] ?? $response ?? [];
+        if (isset($itemsRaw['data']) && is_array($itemsRaw['data'])) {
+            $itemsRaw = $itemsRaw['data'];
         }
 
         $items = collect($itemsRaw)->values()->map(function($item) {
             $obj = (object) $item;
-            // Robust ID normalization
             $obj->id = $obj->id ?? $obj->ID ?? $obj->id_user ?? $obj->user_id ?? $obj->nip ?? null;
-            
-            // Property normalization for view compatibility
             $obj->name = $obj->name ?? $obj->nama ?? $obj->name_user ?? $obj->nip ?? 'N/A';
             $obj->nip = $obj->nip ?? $obj->username ?? '-';
             $obj->unit = $obj->unit ?? $obj->nama_unit ?? $obj->unit_name ?? '-';
@@ -55,21 +53,17 @@ class UserController extends Controller
             return $obj;
         })->sortBy('nip')->values();
 
-        if ($paginatedData) {
-            $total = (int) ($paginatedData['total'] ?? $paginatedData['meta']['total'] ?? $items->count());
-            $perPage = (int) ($request->input('per_page', $paginatedData['per_page'] ?? $paginatedData['meta']['per_page'] ?? 15));
-            $currentPage = (int) ($paginatedData['current_page'] ?? $paginatedData['meta']['current_page'] ?? 1);
-            
-            $users = new LengthAwarePaginator(
-                $items,
-                $total,
-                $perPage,
-                $currentPage,
-                ['path' => $request->url(), 'query' => $request->query()]
-            );
-        } else {
-            $users = new LengthAwarePaginator($items->forPage(1, $perPage), $items->count(), $perPage, 1);
-        }
+        // Local pagination logic
+        $total = $items->count();
+        $pagedItems = $items->forPage($currentPage, $perPage)->values();
+
+        $users = new LengthAwarePaginator(
+            $pagedItems,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('pages.users.index', compact('users'));
     }
