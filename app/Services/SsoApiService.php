@@ -46,7 +46,13 @@ class SsoApiService
             if (!$response) {
                 return ['error' => true, 'message' => 'SSO response is empty.'];
             }
-            return $response->json() ?? [];
+
+            $data = $response->json() ?? [];
+            if (!$response->successful()) {
+                $data['error'] = true;
+                $data['message'] = $data['message'] ?? 'SSO request failed with status ' . $response->status();
+            }
+            return $data;
         } catch (\Throwable $e) {
             Log::error('SSO request failed.', [
                 'message' => $e->getMessage(),

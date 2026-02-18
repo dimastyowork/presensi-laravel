@@ -110,11 +110,14 @@
                 'ml-0': $store.sidebar.isMobileOpen
             }">
             @include('layouts.app-header')
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 pb-6">
                 @yield('content')
+                <!-- Spacer for Mobile Bottom Nav -->
+                <div class="h-32 xl:hidden"></div>
             </div>
         </div>
 
+        @include('layouts.bottom-nav')
     </div>
 
 </body>

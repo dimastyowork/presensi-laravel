@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presence;
+use App\Models\Shift;
 use App\Models\UserShift;
 use App\Services\SsoApiService;
 use Illuminate\Http\Request;
@@ -102,7 +103,21 @@ class PresenceController extends Controller
         $settings = \App\Models\GlobalSetting::all()->pluck('value', 'key');
 
         $selectedType = $request->query('type');
-        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isShiftSelected'));
+        
+        $isStaleOut = false;
+        if ($presence && !$presence->time_out) {
+            $shift = Shift::where('name', $presence->shift_name)->first();
+            if ($shift) {
+                $shiftStartTime = Carbon::parse($presence->date . ' ' . $shift->start_time);
+                $shiftEndTime = Carbon::parse($presence->date . ' ' . $shift->end_time);
+                if ($shiftEndTime->lt($shiftStartTime)) {
+                    $shiftEndTime->addDay();
+                }
+                $isStaleOut = $now->gt($shiftEndTime->addHours(8));
+            }
+        }
+
+        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isShiftSelected', 'isStaleOut'));
     }
 
     public function updateShift(Request $request)
@@ -224,6 +239,21 @@ class PresenceController extends Controller
 
             if (!$presence) {
                 return back()->with('error', 'Anda harus absen masuk terlebih dahulu.');
+            }
+
+            // Max 8 hours after shift restriction
+            $shift = Shift::where('name', $presence->shift_name)->first();
+            if ($shift) {
+                $shiftStartTime = Carbon::parse($presence->date . ' ' . $shift->start_time);
+                $shiftEndTime = Carbon::parse($presence->date . ' ' . $shift->end_time);
+                if ($shiftEndTime->lt($shiftStartTime)) {
+                    $shiftEndTime->addDay();
+                }
+
+                $maxOutTime = (clone $shiftEndTime)->addHours(8);
+                if ($now->gt($maxOutTime)) {
+                    return back()->with('error', "Batas waktu absen keluar untuk shift {$presence->shift_name} telah berakhir (Maksimal 8 jam setelah jadwal shift berakhir pada jam " . $shiftEndTime->format('H:i') . ").");
+                }
             }
 
             $imagePath = $this->handleImageUpload($request->image, $userId, 'out');

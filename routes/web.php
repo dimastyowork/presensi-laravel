@@ -9,6 +9,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\GlobalSettingController;
 use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\OvertimeController;
 
 Route::get('/', function () {
     return redirect()->route('presence.index');
@@ -26,6 +27,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ganti-password', [PasswordController::class, 'changePassword'])->name('password.change');
     Route::post('/ganti-password', [PasswordController::class, 'updatePassword'])->name('password.update');
 
+    // Overtime Routes
+    Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
+    Route::get('/overtime/create', [OvertimeController::class, 'create'])->name('overtime.create');
+    Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+
     Route::get('/presensi', [PresenceController::class, 'index'])->name('presence.index');
     Route::get('/presensi/riwayat', [PresenceController::class, 'history'])->name('presence.history');
     Route::post('/presensi', [PresenceController::class, 'store'])->name('presence.store');
@@ -34,6 +40,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/images/presences/{filename}', [PresenceController::class, 'showImage'])->name('presence.image');
     
     Route::middleware([\App\Http\Middleware\CheckUnitAccess::class])->group(function () {
+        // Admin Overtime
+        Route::get('/admin/overtime', [OvertimeController::class, 'adminIndex'])->name('admin.overtime.index');
+        Route::post('/admin/overtime/approve/{id}', [OvertimeController::class, 'approve'])->name('admin.overtime.approve');
+        Route::post('/admin/overtime/reject/{id}', [OvertimeController::class, 'reject'])->name('admin.overtime.reject');
+
         Route::get('/laporan-hrd', [PresenceController::class, 'hrdReport'])->name('hrd.report');
         Route::get('/laporan-hrd/export-excel', [PresenceController::class, 'exportExcel'])->name('hrd.export.excel');
         Route::get('/laporan-hrd/export-pdf', [PresenceController::class, 'exportPdf'])->name('hrd.export.pdf');

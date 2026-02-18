@@ -133,8 +133,8 @@
                     </template>
                 </div>
 
-                <div @click="if(hasIn && !hasOut) { type = 'out'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
-                    :class="(hasOut || !hasIn) ? 'card-disabled' : 'card-entry card-orange'"
+                <div @click="if(hasIn && !hasOut && !{{ $isStaleOut ? 'true' : 'false' }}) { type = 'out'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
+                    :class="(hasOut || !hasIn || {{ $isStaleOut ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-orange'"
                     class="presence-card">
                     
                     <div class="card-icon-wrapper">
@@ -148,7 +148,15 @@
                             <span>Sudah Terdaftar • {{ $presence && $presence->time_out ? \Carbon\Carbon::parse($presence->time_out)->format('H:i') : '' }}</span>
                         </template>
                         <template x-if="!hasOut">
-                            <span x-text="!hasIn ? 'Masuk dahulu' : 'Selesaikan tugas'"></span>
+                            <span>
+                                @if(!($presence && $presence->time_in))
+                                    Masuk dahulu
+                                @elseif($isStaleOut)
+                                    Batas waktu pulang berakhir (8 Jam)
+                                @else
+                                    Selesaikan tugas
+                                @endif
+                            </span>
                         </template>
                     </p>
 

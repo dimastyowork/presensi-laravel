@@ -36,9 +36,12 @@ class PasswordController extends Controller
         }
 
         $payload = [
+            'nip' => (string) $user->nip,
+            'name' => (string) $user->name,
+            'email' => $user->email,
+            'unit' => $user->unit,
             'password' => $request->password,
             'password_confirmation' => $request->password_confirmation,
-            'is_initial_password' => false,
         ];
 
         $result = $this->ssoService->updateUser($user->id, $payload);
