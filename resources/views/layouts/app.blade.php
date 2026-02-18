@@ -13,6 +13,11 @@
 
     {{-- <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css" id="flatpickr-dark-theme" disabled>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('theme', {
@@ -170,5 +175,152 @@
         }
     });
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const initFlatpickr = () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            const darkTheme = document.getElementById('flatpickr-dark-theme');
+            if (darkTheme) darkTheme.disabled = !isDark;
+
+            flatpickr('input[type="date"]', {
+                locale: 'id',
+                altInput: true,
+                altFormat: "d F Y",
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                disableMobile: "true",
+                onChange: function(selectedDates, dateStr, instance) {
+                    instance.element.dispatchEvent(new Event('input', { bubbles: true }));
+                    instance.element.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+
+            flatpickr('input[type="time"]', {
+                locale: 'id',
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                allowInput: true,
+                disableMobile: "true",
+                onChange: function(selectedDates, dateStr, instance) {
+                    instance.element.dispatchEvent(new Event('input', { bubbles: true }));
+                    instance.element.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        };
+
+        initFlatpickr();
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'theme') {
+                const darkTheme = document.getElementById('flatpickr-dark-theme');
+                if (darkTheme) darkTheme.disabled = e.newValue !== 'dark';
+            }
+        });
+        
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class') {
+                    const darkTheme = document.getElementById('flatpickr-dark-theme');
+                    if (darkTheme) darkTheme.disabled = !document.documentElement.classList.contains('dark');
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
+    });
+</script>
+
+<style>
+    .flatpickr-input[readonly] {
+        background-color: transparent !important;
+    }
+    
+    .flatpickr-mobile {
+        display: none !important;
+    }
+
+    input.flatpickr-input.form-input,
+    input.flatpickr-input.filter-input {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.25rem;
+        padding-right: 3rem !important;
+    }
+
+    .dark input.flatpickr-input.form-input,
+    .dark input.flatpickr-input.filter-input {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E");
+    }
+
+    input[name*="time"].flatpickr-input {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    .flatpickr-calendar {
+        border-radius: 20px !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+        border: 1px solid rgba(0,0,0,0.05) !important;
+        font-family: 'Outfit', sans-serif !important;
+        padding: 10px !important;
+    }
+
+    .dark .flatpickr-calendar {
+        background: #1f2937 !important;
+        border-color: rgba(255,255,255,0.1) !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4) !important;
+        color: #fff !important;
+    }
+
+    .flatpickr-day.selected {
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+        border-radius: 12px !important;
+    }
+
+    .flatpickr-day:hover {
+        border-radius: 12px !important;
+    }
+    
+    .flatpickr-months .flatpickr-month {
+        color: var(--text-main) !important;
+        fill: var(--text-main) !important;
+    }
+    
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+        font-weight: 700 !important;
+    }
+
+    .flatpickr-day {
+        color: var(--text-main) !important;
+    }
+
+    .dark .flatpickr-time {
+        border-top: 1px solid rgba(255,255,255,0.1) !important;
+    }
+    
+    .dark .flatpickr-time input {
+        background: #111827 !important;
+        color: #fff !important;
+        border-radius: 8px !important;
+    }
+    
+    .dark .flatpickr-time .flatpickr-am-pm,
+    .dark .flatpickr-time .flatpickr-time-separator {
+        color: #fff !important;
+    }
+    
+    .dark .flatpickr-calendar.hasTime .flatpickr-time {
+        border-color: rgba(255,255,255,0.1) !important;
+    }
+
+    .dark .flatpickr-months .flatpickr-prev-month, 
+    .dark .flatpickr-months .flatpickr-next-month {
+        color: #fff !important;
+        fill: #fff !important;
+    }
+</style>
 
 </html>

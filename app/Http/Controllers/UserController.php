@@ -24,10 +24,6 @@ class UserController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = (int) $request->input('page', 1);
         
-        // Fetch ALL users to handle local pagination reliably, 
-        // since SSO API might have a different default per_page (e.g. 15) 
-        // or ignore our per_page parameter. 
-        // IMPORTANT: We must strip 'page' from the params sent to SSO so it doesn't return an empty page 2.
         $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
         $response = $this->ssoService->getUsers($params);
         
@@ -35,8 +31,6 @@ class UserController extends Controller
             \Illuminate\Support\Facades\Log::error('SSO API User Response Error', ['response' => $response]);
         }
 
-        // The API when called with 'all' => true usually returns the flat array in 'data' 
-        // or as the root response.
         $itemsRaw = $response['data'] ?? $response ?? [];
         if (isset($itemsRaw['data']) && is_array($itemsRaw['data'])) {
             $itemsRaw = $itemsRaw['data'];
@@ -57,7 +51,6 @@ class UserController extends Controller
             $obj->nip = $obj->nip ?? $obj->username ?? '-';
             $obj->unit = $obj->unit ?? $obj->nama_unit ?? $obj->unit_name ?? '-';
             
-            // Attach shift info
             $shiftRecords = $userShifts->get($obj->id, collect());
             $shiftNames = $shiftRecords->pluck('shift.name')->filter()->values();
             $obj->shift = $shiftNames->isNotEmpty() ? $shiftNames->implode(', ') : '-';
@@ -72,7 +65,6 @@ class UserController extends Controller
             return $obj;
         })->sortBy('nip')->values();
 
-        // Local pagination logic
         $total = $items->count();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();
 

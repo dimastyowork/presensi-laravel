@@ -28,9 +28,6 @@ class PresenceController extends Controller
         $now = Carbon::now();
         $today = Carbon::today();
         
-        // Search for the most relevant presence:
-        // 1. First, an unfinished session (time_out is null)
-        // 2. Otherwise, the session for the calendar today
         $presence = Presence::where('user_id', $userId)
             ->whereNull('time_out')
             ->orderBy('date', 'desc')
@@ -68,20 +65,43 @@ class PresenceController extends Controller
 
         if ($isShiftSelected) {
             $shift = $activeUserShift->shift;
-            $tS = Carbon::parse($today->toDateString() . ' ' . $shift->start_time);
-            $diffs = [
-                ['time' => $tS, 'logical' => $today],
-                ['time' => (clone $tS)->subDay(), 'logical' => (clone $today)->subDay()],
-                ['time' => (clone $tS)->addDay(), 'logical' => (clone $today)->addDay()],
+            $possibleWindows = [
+                ['logical' => (clone $today)->subDay()],
+                ['logical' => (clone $today)],
+                ['logical' => (clone $today)->addDay()],
             ];
 
-            $minDiff = null;
             $bestMatch = null;
-            foreach ($diffs as $d) {
-                $diff = abs($now->diffInMinutes($d['time']));
+            $minDiff = null;
+
+            foreach ($possibleWindows as $window) {
+                $logicalDate = $window['logical'];
+                $startTime = Carbon::parse($logicalDate->toDateString() . ' ' . $shift->start_time);
+                $endTime = Carbon::parse($logicalDate->toDateString() . ' ' . $shift->end_time);
+                
+                if ($endTime->lt($startTime)) {
+                    $endTime->addDay();
+                }
+
+                $bufferStart = (clone $startTime)->subMinutes(60);
+
+                if ($now->between($bufferStart, $endTime)) {
+                    $bestMatch = [
+                        'time' => $startTime,
+                        'logical' => $logicalDate,
+                        'end' => $endTime
+                    ];
+                    break; 
+                }
+
+                $diff = abs($now->diffInMinutes($startTime));
                 if ($minDiff === null || $diff < $minDiff) {
                     $minDiff = $diff;
-                    $bestMatch = $d;
+                    $bestMatch = [
+                        'time' => $startTime,
+                        'logical' => $logicalDate,
+                        'end' => $endTime
+                    ];
                 }
             }
 
@@ -89,12 +109,8 @@ class PresenceController extends Controller
                 $activeShiftInfo['shift_name'] = $shift->name;
                 $activeShiftInfo['start_time'] = $bestMatch['time'];
                 $activeShiftInfo['logical_date'] = $bestMatch['logical'];
-                $activeShiftInfo['end_time'] = Carbon::parse($activeShiftInfo['logical_date']->toDateString() . ' ' . $shift->end_time);
+                $activeShiftInfo['end_time'] = $bestMatch['end'];
                 
-                if ($activeShiftInfo['end_time']->lt($activeShiftInfo['start_time'])) {
-                    $activeShiftInfo['end_time']->addDay();
-                }
-
                 $activeShiftInfo['is_expired'] = $now->gt($activeShiftInfo['end_time']);
                 $activeShiftInfo['is_too_early'] = $now->lt((clone $activeShiftInfo['start_time'])->subMinutes(60));
             }
@@ -142,7 +158,6 @@ class PresenceController extends Controller
             return back()->with('error', 'Anda belum memilih shift kerja. Silakan pilih shift terlebih dahulu.');
         }
 
-        // 1. Identify Shift and Logical Work Date
         $shiftName = null;
         $status = 'Hadir';
         $logicalDate = Carbon::today();
@@ -153,34 +168,55 @@ class PresenceController extends Controller
             $shiftName = $shift->name;
             $shiftWorkingDays = is_array($shift->working_days ?? null) ? $shift->working_days : [];
             
-            $todayStart = Carbon::parse(Carbon::today()->toDateString() . ' ' . $shift->start_time);
-            $yesterdayStart = (clone $todayStart)->subDay();
-            $tomorrowStart = (clone $todayStart)->addDay();
-
-            $diffs = [
-                ['diff' => abs($now->diffInMinutes($todayStart)), 'time' => $todayStart, 'logical' => Carbon::today()],
-                ['diff' => abs($now->diffInMinutes($yesterdayStart)), 'time' => $yesterdayStart, 'logical' => Carbon::yesterday()],
-                ['diff' => abs($now->diffInMinutes($tomorrowStart)), 'time' => $tomorrowStart, 'logical' => Carbon::tomorrow()],
+            // Check windows: Yesterday, Today, Tomorrow
+            $possibleWindows = [
+                ['logical' => Carbon::yesterday()],
+                ['logical' => Carbon::today()],
+                ['logical' => Carbon::tomorrow()],
             ];
 
-            usort($diffs, fn($a, $b) => $a['diff'] <=> $b['diff']);
-            $best = $diffs[0];
+            $best = null;
+            $minDiff = null;
+
+            foreach ($possibleWindows as $window) {
+                $lDate = $window['logical'];
+                $sTime = Carbon::parse($lDate->toDateString() . ' ' . $shift->start_time);
+                $eTime = Carbon::parse($lDate->toDateString() . ' ' . $shift->end_time);
+                
+                if ($eTime->lt($sTime)) {
+                    $eTime->addDay();
+                }
+
+                $bStart = (clone $sTime)->subMinutes(60);
+
+                if ($now->between($bStart, $eTime)) {
+                    $best = [
+                        'time' => $sTime,
+                        'logical' => $lDate,
+                        'end' => $eTime
+                    ];
+                    break;
+                }
+
+                $diff = abs($now->diffInMinutes($sTime));
+                if ($minDiff === null || $diff < $minDiff) {
+                    $minDiff = $diff;
+                    $best = [
+                        'time' => $sTime,
+                        'logical' => $lDate,
+                        'end' => $eTime
+                    ];
+                }
+            }
             
             $shiftStartTime = $best['time'];
             $logicalDate = $best['logical'];
+            $shiftEndTime = $best['end'];
 
-            // Calculate Expected End Time
-            $shiftEndTime = Carbon::parse($logicalDate->toDateString() . ' ' . $shift->end_time);
-            if ($shiftEndTime->lt($shiftStartTime)) {
-                $shiftEndTime->addDay();
-            }
-
-            // Block if shift has already ended
             if ($type === 'in' && $now->gt($shiftEndTime)) {
                 return back()->with('error', "Maaf, shift $shiftName untuk jadwal ini sudah berakhir pada pukul " . $shiftEndTime->format('H:i') . " (" . $shiftEndTime->isoFormat('D MMMM') . ").");
             }
 
-            // Block if too early (more than 1 hour before)
             if ($type === 'in' && $now->lt((clone $shiftStartTime)->subMinutes(60))) {
                 return back()->with('error', "Maaf, absen untuk shift $shiftName belum dibuka. Silakan absen mulai pukul " . (clone $shiftStartTime)->subMinutes(60)->format('H:i') . ".");
             }
@@ -190,9 +226,7 @@ class PresenceController extends Controller
             }
         }
 
-        // 2. Handle Clock In
         if ($type === 'in') {
-            // Check Working Day Restriction based on Logical Date
             if (count($shiftWorkingDays) > 0) {
                 $dayName = $logicalDate->isoFormat('dddd');
                 if (!$this->isWorkingDay($logicalDate, $shiftWorkingDays)) {
@@ -200,7 +234,6 @@ class PresenceController extends Controller
                 }
             }
 
-            // Check for collision using Logical Date
             $existing = Presence::where('user_id', $userId)
                 ->where('date', $logicalDate->toDateString())
                 ->where('shift_name', $shiftName)
@@ -228,8 +261,7 @@ class PresenceController extends Controller
             ]);
             
             $msg = $isFaceDetected ? 'Berhasil Absen Masuk' : 'Absen Masuk Berhasil (Menunggu Verifikasi Wajah)';
-        } 
-        // 3. Handle Clock Out
+        }
         else {
             $presence = Presence::where('user_id', $userId)
                 ->whereNull('time_out')
@@ -241,7 +273,6 @@ class PresenceController extends Controller
                 return back()->with('error', 'Anda harus absen masuk terlebih dahulu.');
             }
 
-            // Max 8 hours after shift restriction
             $shift = Shift::where('name', $presence->shift_name)->first();
             if ($shift) {
                 $shiftStartTime = Carbon::parse($presence->date . ' ' . $shift->start_time);
@@ -265,18 +296,10 @@ class PresenceController extends Controller
                 'location_out' => $request->location,
                 'image_out' => $imagePath,
                 'note' => $request->note,
-                // Only update pending status if it's clock out and face not detected. 
-                // If it was already pending from IN, it stays pending? 
-                // Let's assume ANY missing face makes it pending.
-                'is_pending' => $presence->is_pending || !$isFaceDetected, // If already pending, stay pending. If new invalid face, become pending.
-                'is_face_detected' => $presence->is_face_detected && $isFaceDetected, // Tracking overall valid session? Or strictly per action? 
-                // Actually simplicity: Update 'is_pending' if current action fails face check.
+                'is_pending' => $presence->is_pending || !$isFaceDetected,
+                'is_face_detected' => $presence->is_face_detected && $isFaceDetected,
             ]);
             
-            // Logic: If check-in had face (valid) but check-out no face (invalid) -> becomes pending.
-            // If check-in no face (pending) and check-out has face -> Should it clear pending?
-            // "nanti hrd bisa accept" -> implies manual intervention. So automatic clearing might be risky.
-            // Let's force Pending if THIS action fails face check.
             if (!$isFaceDetected) {
                 $presence->update(['is_pending' => true]);
             }
@@ -351,7 +374,6 @@ class PresenceController extends Controller
     {
         $query = Presence::query();
         
-        // Match view defaults: start of current month to today
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->toDateString());
 
@@ -409,7 +431,6 @@ class PresenceController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         
-        // Final safeguard against showing more than perPage
         $pagedItems = $filteredPresences->forPage($currentPage, $perPage)->values();
         
         $presences = new LengthAwarePaginator(
@@ -478,7 +499,6 @@ class PresenceController extends Controller
             ->orderBy('date', 'asc')
             ->first();
 
-        // Get data for mini calendar (current month)
         $currentDate = Carbon::parse($presence->date);
         $monthlyPresences = Presence::where('user_id', $presence->user_id)
             ->whereYear('date', $currentDate->year)
@@ -534,8 +554,8 @@ class PresenceController extends Controller
         }
 
         $workingDaysLc = collect($workingDays)
-            ->filter(fn($v) => is_string($v))
-            ->map(fn($v) => mb_strtolower(trim($v)))
+            ->map(fn($v) => mb_strtolower(trim((string)$v)))
+            ->filter()
             ->values()
             ->all();
 
@@ -543,25 +563,8 @@ class PresenceController extends Controller
             return true;
         }
 
-        $aliases = $this->getDayAliases($date);
-        foreach ($aliases as $alias) {
-            if (in_array($alias, $workingDaysLc, true)) {
-                return true;
-            }
-        }
-
-        Log::warning('Working day mismatch.', [
-            'date' => $date->toDateString(),
-            'aliases' => $aliases,
-            'configured_days' => $workingDaysLc,
-        ]);
-
-        return false;
-    }
-
-    private function getDayAliases(Carbon $date): array
-    {
         $dayMap = [
+            0 => ['minggu', 'sunday', 'sun'],
             1 => ['senin', 'monday', 'mon'],
             2 => ['selasa', 'tuesday', 'tue'],
             3 => ['rabu', 'wednesday', 'wed'],
@@ -571,6 +574,38 @@ class PresenceController extends Controller
             7 => ['minggu', 'sunday', 'sun'],
         ];
 
-        return $dayMap[$date->dayOfWeekIso] ?? [];
+        // Combine aliases from dayOfWeek (0-6) and dayOfWeekIso (1-7)
+        $dayIndex = $date->dayOfWeek;
+        $dayIndexIso = $date->dayOfWeekIso;
+        
+        $aliases = array_merge(
+            $dayMap[$dayIndex] ?? [],
+            $dayMap[$dayIndexIso] ?? []
+        );
+
+        // Add localized day names from Carbon to be extra safe
+        $aliases[] = mb_strtolower($date->isoFormat('dddd'));
+        $aliases[] = mb_strtolower($date->format('l'));
+        $aliases[] = mb_strtolower($date->format('D'));
+        
+        // Remove duplicates and trim aliases
+        $aliases = array_unique(array_map('trim', $aliases));
+
+        foreach ($aliases as $alias) {
+            if (in_array($alias, $workingDaysLc, true)) {
+                return true;
+            }
+        }
+
+        Log::warning('Working day mismatch.', [
+            'date' => $date->toDateString(),
+            'logical_day_name' => $date->isoFormat('dddd'),
+            'day_index' => $dayIndex,
+            'day_index_iso' => $dayIndexIso,
+            'matched_aliases' => $aliases,
+            'configured_working_days' => $workingDaysLc,
+        ]);
+
+        return false;
     }
 }

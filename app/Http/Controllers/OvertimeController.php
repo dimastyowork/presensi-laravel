@@ -25,7 +25,6 @@ class OvertimeController extends Controller
         $userId = Auth::id();
         $baseQuery = Overtime::where('user_id', $userId);
 
-        // Apply filters
         $query = (clone $baseQuery);
         
         if ($request->filled('status')) {
@@ -112,7 +111,6 @@ class OvertimeController extends Controller
 
         $usersMap = $this->ssoService->getUsersMap();
         
-        // Manual filter and attach user info
         $items = $allOvertimes->map(function($ot) use ($usersMap) {
             $user = $usersMap[(string) $ot->user_id] ?? null;
             $ot->user_name = $user['name'] ?? 'N/A';

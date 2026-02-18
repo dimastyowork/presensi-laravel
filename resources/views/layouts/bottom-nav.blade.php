@@ -30,8 +30,7 @@
     }
 @endphp
 
-<!-- Mobile Bottom Navigation -->
-<div class="mobile-bottom-nav xl:hidden">
+<div class="mobile-bottom-nav xl:hidden" id="mobileBottomNav">
     <div class="bottom-nav-glass shadow-premium">
         <div class="nav-items-wrapper">
             @foreach($navItems as $item)
@@ -49,7 +48,6 @@
                 </a>
             @endforeach
             
-            <!-- Sidebar Toggle / More -->
             <button @click="$store.sidebar.toggleMobileOpen()" class="nav-item">
                 <div class="nav-icon-wrapper">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -62,12 +60,16 @@
 
 <style>
     .mobile-bottom-nav {
+        --bottom-nav-inactive: #94a3b8;
+        --bottom-nav-active: #3b82f6;
         position: fixed;
         bottom: calc(15px + env(safe-area-inset-bottom));
         left: 20px;
         right: 20px;
         z-index: 50;
         pointer-events: none;
+        transition: transform 0.28s ease, opacity 0.28s ease;
+        will-change: transform, opacity;
     }
 
     .bottom-nav-glass {
@@ -84,8 +86,9 @@
     }
 
     .dark .bottom-nav-glass {
-        background: rgba(31, 41, 55, 0.85);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(31, 41, 55, 0.75);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     }
 
     .nav-items-wrapper {
@@ -100,7 +103,7 @@
         align-items: center;
         gap: 5px;
         text-decoration: none;
-        color: var(--text-dim);
+        color: var(--bottom-nav-inactive);
         transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         padding: 5px 10px;
         position: relative;
@@ -108,7 +111,7 @@
     }
 
     .nav-item.active {
-        color: var(--brand-blue);
+        color: var(--bottom-nav-active);
         transform: translateY(-8px);
     }
 
@@ -135,12 +138,54 @@
         width: 4px;
         height: 4px;
         border-radius: 50%;
-        background: var(--brand-blue);
+        background: var(--bottom-nav-active);
         margin-top: 2px;
     }
 
+    .mobile-bottom-nav.is-hidden {
+        transform: translateY(130%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.28s ease, opacity 0.28s ease;
+        will-change: transform, opacity;
+    }
     @media (max-width: 380px) {
         .nav-label { display: none; }
         .nav-item { min-width: 40px; }
     }
 </style>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const nav = document.getElementById('mobileBottomNav');
+        if (!nav) return;
+
+        let lastY = window.scrollY || 0;
+        let ticking = false;
+
+        const updateNavVisibility = () => {
+            const currentY = window.scrollY || 0;
+            const doc = document.documentElement;
+            const atBottom = (currentY + window.innerHeight) >= (doc.scrollHeight - 2);
+            const shouldHide = atBottom;
+
+            nav.classList.toggle('is-hidden', shouldHide);
+            lastY = currentY;
+            ticking = false;
+        };
+
+        window.addEventListener('scroll', function() {
+            if (!ticking) {
+                window.requestAnimationFrame(updateNavVisibility);
+                ticking = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('resize', updateNavVisibility, { passive: true });
+        updateNavVisibility();
+    });
+</script>
+
+
+

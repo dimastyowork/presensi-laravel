@@ -12,7 +12,7 @@
                                 Selamat Datang
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                                Masukkan email dan password Anda untuk masuk ke sistem e-presensi.
+                                Masukkan NIP dan password Anda untuk masuk ke sistem e-presensi.
                             </p>
                         </div>
                         

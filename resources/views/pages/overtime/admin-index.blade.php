@@ -17,7 +17,6 @@
         this.showActionModal = true;
     }
 }">
-    <!-- Header -->
     <div class="history-header">
         <div class="header-main">
             <h1 class="header-title">Laporan <span class="text-brand">Lembur</span></h1>
@@ -25,7 +24,6 @@
         </div>
     </div>
 
-    <!-- Stats Grid for Admin -->
     <div class="stats-grid">
         <div class="stat-card card-gradient shadow-premium">
             <div class="card-blur-circle"></div>
@@ -75,7 +73,6 @@
         </div>
     @endif
 
-    <!-- Filters -->
     <div class="filter-card glass shadow-premium mb-8">
         <form action="{{ route('admin.overtime.index') }}" method="GET" class="filter-grid">
             <div class="filter-group">
@@ -120,7 +117,6 @@
         </form>
     </div>
 
-    <!-- Content Table -->
     <div class="content-card glass shadow-premium">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -208,12 +204,10 @@
         </div>
     </div>
 
-    <!-- Pagination -->
     <div class="pagination-container mt-6">
         {{ $overtimes->links() }}
     </div>
 
-    <!-- Action Modal -->
     <div x-show="showActionModal" class="modal-overlay" @click="showActionModal = false" x-cloak x-transition.opacity>
         <div class="modal-content-glass shadow-high" @click.stop x-transition.scale>
             <div class="modal-header-custom mb-6">
@@ -344,6 +338,60 @@
     .shadow-red-light { box-shadow: 0 10px 20px rgba(239, 68, 68, 0.1); }
     .pulse { animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+    /* Pagination Styles */
+    .pagination-container nav {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        width: 100%;
+        margin-top: 30px;
+    }
+
+    @media (min-width: 768px) {
+        .pagination-container nav {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+    }
+
+    .pagination-container .text-sm {
+        color: var(--text-dim) !important;
+    }
+
+    .pagination-container .font-medium {
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-container span,
+    .dark .pagination-container p {
+        color: var(--text-dim) !important;
+    }
+
+    .dark .pagination-container nav a {
+        background-color: var(--card-bg) !important;
+        border-color: var(--card-border) !important;
+        color: var(--text-dim) !important;
+    }
+
+    .dark .pagination-container nav a:hover {
+        background-color: var(--hover-bg) !important;
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-container nav span[aria-current="page"] > span {
+        background-color: var(--brand-blue) !important;
+        border-color: var(--brand-blue) !important;
+        color: white !important;
+    }
+
+    @media (min-width: 640px) {
+        .pagination-container nav > div:first-child { 
+            display: none !important; 
+        }
+    }
 
     @media (max-width: 1024px) {
         .stats-grid { grid-template-columns: 1fr; }

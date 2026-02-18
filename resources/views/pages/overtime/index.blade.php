@@ -273,6 +273,60 @@
     .btn-reset { color: var(--text-dim); }
     .btn-reset:hover { color: var(--brand-orange); background: var(--hover-bg); }
 
+    /* Pagination Styles */
+    .pagination-container nav {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        width: 100%;
+        margin-top: 30px;
+    }
+
+    @media (min-width: 768px) {
+        .pagination-container nav {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+    }
+
+    .pagination-container .text-sm {
+        color: var(--text-dim) !important;
+    }
+
+    .pagination-container .font-medium {
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-container span,
+    .dark .pagination-container p {
+        color: var(--text-dim) !important;
+    }
+
+    .dark .pagination-container nav a {
+        background-color: var(--card-bg) !important;
+        border-color: var(--card-border) !important;
+        color: var(--text-dim) !important;
+    }
+
+    .dark .pagination-container nav a:hover {
+        background-color: var(--hover-bg) !important;
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-container nav span[aria-current="page"] > span {
+        background-color: var(--brand-blue) !important;
+        border-color: var(--brand-blue) !important;
+        color: white !important;
+    }
+
+    @media (min-width: 640px) {
+        .pagination-container nav > div:first-child { 
+            display: none !important; 
+        }
+    }
+
     @media (max-width: 900px) {
         .stats-grid { grid-template-columns: 1fr; }
         .stat-group { grid-template-columns: 1fr; }

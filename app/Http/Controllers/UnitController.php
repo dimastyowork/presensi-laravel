@@ -20,8 +20,6 @@ class UnitController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = (int) $request->input('page', 1);
 
-        // Fetch ALL units to handle local pagination reliably
-        // IMPORTANT: We must strip 'page' from the params sent to SSO so it doesn't return an empty page 2.
         $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
         $response = $this->ssoService->getUnits($params);
         
@@ -47,7 +45,6 @@ class UnitController extends Controller
             return $obj;
         });
 
-        // Local pagination logic
         $total = $items->count();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();
 

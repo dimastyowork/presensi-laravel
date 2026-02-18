@@ -48,15 +48,6 @@ class GlobalSettingSeeder extends Seeder
                 'type' => 'text',
                 'is_active' => true,
             ],
-            [
-                'key' => 'external_links',
-                'value' => json_encode([
-                    ['label' => 'Form Cuti Online', 'url' => 'https://trello.com/b/cymDIrip/it-asa-bunda']
-                ]), 
-                'description' => 'Daftar Tombol Link Eksternal',
-                'type' => 'json',
-                'is_active' => true,
-            ],
         ], ['key'], ['value', 'description', 'type', 'is_active']);
         
         \App\Models\GlobalSetting::whereIn('key', ['external_link_label', 'external_link_url'])->delete();

@@ -23,9 +23,6 @@ class GlobalSettingController extends Controller
             );
         }
 
-        // Specific cleanups if any
-
-
         return back()->with('success', 'Pengaturan berhasil diperbarui.');
     }
 }
