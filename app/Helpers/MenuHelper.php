@@ -7,7 +7,8 @@ class MenuHelper
     public static function getMenuGroups()
     {
         $user = auth()->user();
-        $isAdmin = $user && in_array($user->unit, ['IT', 'HRD', 'SDM & DIKLAT', 'SDM']);
+        $unit = mb_strtoupper(trim((string) ($user->unit ?? '')));
+        $isAdmin = $user && in_array($unit, ['IT', 'HRD', 'SDM & DIKLAT'], true);
 
         $menuItems = [
             [

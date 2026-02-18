@@ -3,14 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presence;
+use App\Models\Unit as LocalUnit;
+use App\Services\SsoApiService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class PresenceController extends Controller
 {
+    protected $ssoService;
+
+    public function __construct(SsoApiService $ssoService)
+    {
+        $this->ssoService = $ssoService;
+    }
     public function index(Request $request)
     {
         $userId = Auth::id(); 
@@ -33,12 +44,14 @@ class PresenceController extends Controller
                 ->first();
         }
 
-        $unit = \App\Models\Unit::where('name', $user->unit)->first();
-        $isWorkingDay = true;
+        $unit = $this->resolveUserUnit($user);
+        
+        $isWorkingDay = false;
         $dayName = $today->isoFormat('dddd');
+        $isScheduleConfigured = $unit && count($unit->working_days) > 0 && count($unit->available_shifts) > 0;
 
-        if ($unit && $unit->working_days && count($unit->working_days) > 0) {
-            $isWorkingDay = in_array($dayName, $unit->working_days);
+        if ($isScheduleConfigured) {
+            $isWorkingDay = $this->isWorkingDay($today, $unit->working_days);
         }
 
         // Shift proximity logic for UI
@@ -52,10 +65,10 @@ class PresenceController extends Controller
             'end_time' => null
         ];
 
-        if ($unit && $unit->available_shifts && count($unit->available_shifts) > 0) {
+        if ($isScheduleConfigured) {
             $minDiff = null;
             foreach ($unit->available_shifts as $shift) {
-                if (!is_array($shift) || !isset($shift['start_time'])) continue;
+                if (!isset($shift['start_time'])) continue;
                 $tS = Carbon::parse($today->toDateString() . ' ' . $shift['start_time']);
                 $diffs = [
                     ['time' => $tS, 'logical' => $today],
@@ -87,7 +100,7 @@ class PresenceController extends Controller
         $settings = \App\Models\GlobalSetting::all()->pluck('value', 'key');
 
         $selectedType = $request->query('type');
-        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings'));
+        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isScheduleConfigured'));
     }
 
     public function store(Request $request)
@@ -96,20 +109,32 @@ class PresenceController extends Controller
         $user = Auth::user();
         $now = Carbon::now();
         $type = $request->input('type', 'in');
-        $unit = \App\Models\Unit::where('name', $user->unit)->first();
+        $unit = $this->resolveUserUnit($user);
+
+        // Untuk absen masuk, jadwal unit wajib lengkap.
+        // Untuk absen pulang, tetap izinkan selama ada sesi masuk terbuka.
+        if ($type === 'in') {
+            if (
+                !$unit ||
+                count($unit->available_shifts) === 0 ||
+                count($unit->working_days) === 0
+            ) {
+                return back()->with('error', 'Jadwal unit Anda belum diatur lengkap (hari kerja/shift). Hubungi admin.');
+            }
+        }
 
         // 1. Identify Closest Shift and Logical Work Date
         $shiftName = null;
         $status = 'Hadir';
         $logicalDate = Carbon::today();
 
-        if ($unit && $unit->available_shifts && count($unit->available_shifts) > 0) {
+        if ($unit && count($unit->available_shifts) > 0) {
             $closestShift = null;
             $closestShiftStartTime = null;
             $minDiff = null;
 
             foreach ($unit->available_shifts as $shift) {
-                if (!is_array($shift) || !isset($shift['start_time'])) continue;
+                if (!isset($shift['start_time'])) continue;
 
                 try {
                     $todayStart = Carbon::parse(Carbon::today()->toDateString() . ' ' . $shift['start_time']);
@@ -162,9 +187,9 @@ class PresenceController extends Controller
         // 2. Handle Clock In
         if ($type === 'in') {
             // Check Working Day Restriction based on Logical Date
-            if ($unit && $unit->working_days && count($unit->working_days) > 0) {
+            if ($unit && count($unit->working_days) > 0) {
                 $dayName = $logicalDate->isoFormat('dddd');
-                if (!in_array($dayName, $unit->working_days)) {
+                if (!$this->isWorkingDay($logicalDate, $unit->working_days)) {
                     return back()->with('error', "Maaf, hari $dayName bukan hari kerja untuk unit Anda.");
                 }
             }
@@ -302,19 +327,13 @@ class PresenceController extends Controller
 
     public function hrdReport(Request $request)
     {
-        $query = Presence::with('user');
+        $query = Presence::query();
         
         if ($request->filled('start_date')) {
             $query->where('date', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
             $query->where('date', '<=', $request->end_date);
-        }
-        
-        if ($request->filled('unit')) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('unit', $request->unit);
-            });
         }
         
         if ($request->filled('status')) {
@@ -338,38 +357,49 @@ class PresenceController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        // Filter by user search (Text input)
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
-            });
-        }
-        
-        $totalAttendance = (clone $query)->count();
+        $allPresences = $query->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
+            ->get();
 
-        $userAttendanceCounts = (clone $query)
-            ->select('user_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+        $usersMap = $this->ssoService->getUsersMap();
+        $filteredPresences = $this->filterPresencesBySsoUser($allPresences, $usersMap, $request);
+        $this->attachSsoUserRelation($filteredPresences, $usersMap);
+
+        $totalAttendance = $filteredPresences->count();
+
+        $userAttendanceCounts = $filteredPresences
             ->groupBy('user_id')
-            ->pluck('total', 'user_id');
+            ->map(fn(Collection $items) => $items->count());
 
-        // Hitung total keterlambatan per user
-        $userLatenessCounts = (clone $query)
+        $userLatenessCounts = $filteredPresences
             ->where('status', 'Terlambat')
-            ->select('user_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
             ->groupBy('user_id')
-            ->pluck('total', 'user_id');
+            ->map(fn(Collection $items) => $items->count());
 
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $pagedItems = $filteredPresences->forPage($currentPage, $perPage)->values();
+        $presences = new LengthAwarePaginator(
+            $pagedItems,
+            $filteredPresences->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
-        $presences = $query->orderBy('date', 'desc')
-                          ->orderBy('time_in', 'desc')
-                          ->paginate($perPage)
-                          ->withQueryString();
-        
-        $units = \App\Models\Unit::orderBy('name')->pluck('name');
-        $users = \App\Models\User::orderBy('name')->get(['id', 'name', 'nip']);
+        $unitsResponse = $this->ssoService->getUnits(['all' => true]);
+        $unitsRaw = $unitsResponse['data'] ?? (isset($unitsResponse[0]) ? $unitsResponse : []);
+        $units = collect($unitsRaw)
+            ->filter(fn($u) => is_array($u))
+            ->map(fn($u) => $this->ssoService->normalizeUnit($u))
+            ->pluck('name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $users = collect($usersMap)
+            ->map(fn($user) => (object) $user)
+            ->values();
         
         $globalPendingCount = Presence::where('is_pending', true)->count();
         
@@ -402,6 +432,9 @@ class PresenceController extends Controller
 
     public function showDetail(Presence $presence)
     {
+        $usersMap = $this->ssoService->getUsersMap();
+        $this->attachSsoUserRelation(collect([$presence]), $usersMap);
+
         $prevPresence = Presence::where('user_id', $presence->user_id)
             ->where('date', '<', $presence->date)
             ->orderBy('date', 'desc')
@@ -421,5 +454,135 @@ class PresenceController extends Controller
             ->keyBy('date');
 
         return view('pages.laporan-detail', compact('presence', 'prevPresence', 'nextPresence', 'monthlyPresences'));
+    }
+
+    private function filterPresencesBySsoUser(Collection $presences, array $usersMap, Request $request): Collection
+    {
+        return $presences->filter(function (Presence $presence) use ($usersMap, $request) {
+            $user = $usersMap[(string) $presence->user_id] ?? null;
+
+            if ($request->filled('unit')) {
+                $unit = $user['unit'] ?? null;
+                if ($unit !== $request->unit) {
+                    return false;
+                }
+            }
+
+            if ($request->filled('search')) {
+                $needle = strtolower((string) $request->search);
+                $name = strtolower((string) ($user['name'] ?? ''));
+                $nip = strtolower((string) ($user['nip'] ?? ''));
+                if (!str_contains($name, $needle) && !str_contains($nip, $needle)) {
+                    return false;
+                }
+            }
+
+            return true;
+        })->values();
+    }
+
+    private function attachSsoUserRelation(Collection $presences, array $usersMap): void
+    {
+        foreach ($presences as $presence) {
+            $user = $usersMap[(string) $presence->user_id] ?? null;
+            $presence->setRelation('user', (object) [
+                'id' => $presence->user_id,
+                'name' => $user['name'] ?? 'N/A',
+                'nip' => $user['nip'] ?? '-',
+                'unit' => $user['unit'] ?? '-',
+            ]);
+        }
+    }
+
+    private function resolveUserUnit($user): ?object
+    {
+        if (!$user) {
+            return null;
+        }
+
+        $unitId = $user->unit_id ?? null;
+        if (empty($unitId) || !Schema::hasColumn('units', 'sso_unit_id')) {
+            Log::warning('User unit_id is missing or units.sso_unit_id column unavailable.', [
+                'user_id' => $user->id ?? null,
+                'user_unit_id' => $unitId,
+            ]);
+            return null;
+        }
+
+        $local = LocalUnit::where('sso_unit_id', (int) $unitId)->first();
+
+        if (!$local) {
+            Log::warning('Local unit schedule not found by sso_unit_id.', [
+                'user_id' => $user->id ?? null,
+                'user_unit_id' => $unitId,
+            ]);
+            return null;
+        }
+
+        $normalizedShifts = [];
+        $sourceShifts = is_array($local?->available_shifts) ? $local->available_shifts : [];
+        foreach ($sourceShifts as $shift) {
+            if (is_array($shift)) {
+                $normalizedShifts[] = $shift;
+                continue;
+            }
+            if (is_object($shift)) {
+                $normalizedShifts[] = (array) $shift;
+            }
+        }
+
+        return (object) [
+            'id' => (int) $unitId,
+            'name' => $user->unit ?? null,
+            'working_days' => is_array($local?->working_days) ? $local->working_days : [],
+            'available_shifts' => $normalizedShifts,
+        ];
+    }
+
+    private function isWorkingDay(Carbon $date, array $workingDays): bool
+    {
+        if (empty($workingDays)) {
+            return true;
+        }
+
+        $workingDaysLc = collect($workingDays)
+            ->filter(fn($v) => is_string($v))
+            ->map(fn($v) => mb_strtolower(trim($v)))
+            ->values()
+            ->all();
+
+        if (empty($workingDaysLc)) {
+            return true;
+        }
+
+        $aliases = $this->getDayAliases($date);
+        foreach ($aliases as $alias) {
+            if (in_array($alias, $workingDaysLc, true)) {
+                return true;
+            }
+        }
+
+        Log::warning('Working day mismatch.', [
+            'date' => $date->toDateString(),
+            'aliases' => $aliases,
+            'configured_days' => $workingDaysLc,
+        ]);
+
+        return false;
+    }
+
+    private function getDayAliases(Carbon $date): array
+    {
+        $dayMap = [
+            1 => ['senin', 'monday', 'mon'],
+            2 => ['selasa', 'tuesday', 'tue'],
+            3 => ['rabu', 'wednesday', 'wed'],
+            4 => ['kamis', 'thursday', 'thu'],
+            5 => ['jumat', "jum'at", 'friday', 'fri'],
+            6 => ['sabtu', 'saturday', 'sat'],
+            7 => ['minggu', 'sunday', 'sun'],
+        ];
+
+        return $dayMap[$date->dayOfWeekIso] ?? [];
     }
 }

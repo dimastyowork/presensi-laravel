@@ -130,4 +130,55 @@
 
 @stack('scripts')
 
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Success Message
+        @if (session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ session('success') }}",
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            });
+        @endif
+
+        // Error Message
+        @if (session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: "{{ session('error') }}",
+                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            });
+        @endif
+
+        // Delete Confirmation
+        window.confirmDelete = function(formId) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal',
+                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(formId).submit();
+                }
+            });
+        }
+    });
+</script>
+
 </html>

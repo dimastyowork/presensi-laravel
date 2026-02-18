@@ -20,7 +20,7 @@
 
     <!-- Form -->
     <div class="form-card glass">
-        <form action="{{ route('users.update', $user) }}" method="POST">
+        <form action="{{ route('users.update', $user->id) }}" method="POST">
             @csrf
             @method('PUT')
             
@@ -50,16 +50,16 @@
                     <select name="unit" class="form-input @error('unit') error @enderror" id="unit-select">
                         <option value="">Pilih Unit</option>
                         @foreach($units as $unit)
-                            <option value="{{ $unit->name }}" {{ old('unit', $user->unit) == $unit->name ? 'selected' : '' }}>
-                                {{ $unit->name }}
+                            @php
+                                $unitName = is_array($unit) ? ($unit['name'] ?? $unit['nama'] ?? $unit['nama_unit'] ?? null) : ($unit->name ?? null);
+                            @endphp
+                            @if($unitName)
+                            <option value="{{ $unitName }}" {{ old('unit', $user->unit) == $unitName ? 'selected' : '' }}>
+                                {{ $unitName }}
                             </option>
+                            @endif
                         @endforeach
                     </select>
-                    @error('unit')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-
                     @error('unit')
                         <span class="error-message">{{ $message }}</span>
                     @enderror

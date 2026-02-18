@@ -16,8 +16,10 @@ class CheckUnitAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
+        $unit = mb_strtoupper(trim((string) ($user->unit ?? '')));
+        $allowedUnits = ['IT', 'HRD', 'SDM & DIKLAT'];
 
-        if (!$user || !in_array($user->unit, ['IT', 'HRD', 'SDM', 'SDM & DIKLAT'])) {
+        if (!$user || !in_array($unit, $allowedUnits, true)) {
             abort(403, 'Anda tidak memiliki hak akses ke halaman ini.');
         }
 

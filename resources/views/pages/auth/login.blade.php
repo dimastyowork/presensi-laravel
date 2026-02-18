@@ -70,6 +70,11 @@
                                 </button>
                             </div>
                         </form>
+                        <div class="mt-8 text-center">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Dengan masuk, Anda menyetujui <a href="{{ route('legal.terms') }}" class="font-semibold text-brand-500 hover:text-brand-600 dark:hover:text-brand-400">Persetujuan & Kebijakan</a> kami.
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-10 py-6 text-center lg:hidden">

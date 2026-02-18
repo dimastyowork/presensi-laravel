@@ -20,18 +20,15 @@
 
     <!-- Form -->
     <div class="form-card glass">
-        <form action="{{ route('units.update', $unit) }}" method="POST">
+        <form action="{{ route('units.update', $unit->id) }}" method="POST">
             @csrf
             @method('PUT')
             
             <div class="form-grid">
                 <!-- Nama Unit -->
                 <div class="form-group full-width">
-                    <label class="form-label">Nama Unit <span class="required">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $unit->name) }}" class="form-input @error('name') error @enderror" placeholder="Contoh: IT, HRD, Finance" required>
-                    @error('name')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
+                    <label class="form-label">Unit (SSO)</label>
+                    <input type="text" value="{{ $unit->name }} (ID: {{ $unit->id }})" class="form-input" readonly>
                 </div>
 
                 <!-- Working Days -->

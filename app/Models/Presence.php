@@ -23,9 +23,4 @@ class Presence extends Model
         'image_out',
         'note',
     ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 }

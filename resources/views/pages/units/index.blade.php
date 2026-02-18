@@ -20,13 +20,32 @@
 
     <!-- Success Message -->
     @if(session('success'))
-    <div class="alert-success">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
-        {{ session('success') }}
-    </div>
+        <div class="alert-success glass mb-6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            {{ session('success') }}
+        </div>
     @endif
+
+    <!-- Search Section -->
+    <div class="search-section glass">
+        <form action="{{ route('units.index') }}" method="GET" class="search-form">
+            <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+            <div class="search-input-wrapper">
+                <svg class="w-5 h-5 search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Nama Unit..." class="search-input">
+            </div>
+            
+            <button type="submit" class="btn-search">Cari</button>
+            @if(request('search'))
+                <a href="{{ route('units.index', ['per_page' => request('per_page', 10)]) }}" class="btn-reset">Reset</a>
+            @endif
+        </form>
+    </div>
+
 
     <!-- Units Table -->
     <div class="table-container glass">
@@ -61,7 +80,7 @@
                             @endif
                         </td>
                         <td>
-                            @if($unit->available_shifts && count($unit->available_shifts) > 0)
+                            @if(!empty($unit->available_shifts) && is_iterable($unit->available_shifts) && count($unit->available_shifts) > 0)
                                 <div class="shifts-container">
                                     @foreach($unit->available_shifts as $shift)
                                         <span class="shift-badge-small">
@@ -80,20 +99,24 @@
                         <td>{{ $unit->created_at->isoFormat('D MMM Y') }}</td>
                         <td>
                             <div class="action-buttons">
-                                <a href="{{ route('units.edit', $unit) }}" class="btn-action edit">
+                                @if($unit->id)
+                                <a href="{{ route('units.edit', $unit->id) }}" class="btn-action edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
-                                <form action="{{ route('units.destroy', $unit) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus unit ini?')">
+                                <form action="{{ route('units.destroy', $unit->id) }}" method="POST" class="inline-block" id="delete-form-{{ $unit->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn-action delete">
+                                    <button type="button" class="btn-action delete" onclick="confirmDelete('delete-form-{{ $unit->id }}')">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
                                 </form>
+                                @else
+                                <span class="text-dim">N/A</span>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -114,12 +137,29 @@
             </table>
         </div>
 
-        <!-- Pagination -->
-        @if($units->hasPages())
-        <div class="pagination-wrapper">
-            {{ $units->links() }}
+        <!-- Footer: Pagination & Per Page -->
+        <div class="table-footer glass">
+            <div class="per-page-footer">
+                <form action="{{ route('units.index') }}" method="GET" id="perPageForm">
+                    @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <label for="per_page">Tampilkan:</label>
+                    <select name="per_page" onchange="this.form.submit()" class="footer-select">
+                        <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </form>
+            </div>
+            
+            @if($units->hasPages())
+            <div class="pagination-wrapper">
+                {{ $units->links() }}
+            </div>
+            @endif
         </div>
-        @endif
     </div>
 </div>
 
@@ -150,6 +190,7 @@
         --card-border: rgba(255, 255, 255, 0.08);
         --glass-bg: rgba(31, 41, 55, 0.8);
         --hover-bg: rgba(255, 255, 255, 0.05);
+        --shadow-color: rgba(0, 0, 0, 0.3);
     }
 
     .unit-management-container {
@@ -157,6 +198,187 @@
         margin: 0 auto;
         padding: 60px 20px 40px;
         font-family: 'Outfit', sans-serif;
+    }
+
+    .search-section {
+        margin-bottom: 24px;
+        padding: 24px;
+        border-radius: 20px;
+        background: var(--glass-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 8px 32px var(--shadow-color);
+    }
+
+    .search-form {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-dim);
+        transition: color 0.3s;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 14px 14px 14px 48px;
+        background: var(--hover-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        color: var(--text-main);
+        font-size: 0.95rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        background: var(--card-bg);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .search-input:focus ~ .search-icon {
+        color: var(--brand-blue);
+    }
+
+    .btn-search {
+        padding: 14px 28px;
+        background: var(--brand-blue);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-search:hover {
+        background: var(--brand-blue-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-reset {
+        padding: 14px 28px;
+        background: var(--hover-bg);
+        color: var(--text-secondary);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-reset:hover {
+        background: var(--card-bg);
+        border-color: var(--brand-red);
+        color: var(--brand-red);
+        transform: translateY(-2px);
+    }
+
+    .table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-top: 1px solid var(--card-border);
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .per-page-footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .per-page-footer form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .footer-select {
+        padding: 8px 16px;
+        background: var(--hover-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        color: var(--text-main);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
+    }
+
+    .dark .footer-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    }
+
+    .footer-select:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        background-color: var(--card-bg);
+    }
+
+    /* Fix Pagination Styling & Double View */
+    .pagination-wrapper nav {
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Laravel Pagination Metadata Styling (Dark Mode) */
+    .pagination-wrapper .text-sm {
+        color: var(--text-secondary) !important;
+    }
+
+    .pagination-wrapper .font-medium {
+        color: var(--text-main) !important;
+    }
+
+    .dark .pagination-wrapper .text-gray-700,
+    .dark .pagination-wrapper .text-gray-500 {
+        color: var(--text-secondary) !important;
+    }
+
+    /* Hide the mobile view on desktop and vice versa */
+    .pagination-wrapper nav > div:first-child { 
+        display: flex;
+    }
+    .pagination-wrapper nav > div:last-child { 
+        display: none;
+    }
+
+    @media (min-width: 640px) {
+        .pagination-wrapper nav > div:first-child { 
+            display: none !important; 
+        }
+        .pagination-wrapper nav > div:last-child { 
+            display: flex !important; 
+        }
     }
 
     .page-header {

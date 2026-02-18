@@ -18,18 +18,12 @@
         </a>
     </div>
 
-    @if(session('success'))
-    <div class="alert-success">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
-        {{ session('success') }}
-    </div>
-    @endif
+
 
     <!-- Search Section -->
-    <!-- <div class="search-section glass">
+    <div class="search-section glass">
         <form action="{{ route('users.index') }}" method="GET" class="search-form">
+            <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
             <div class="search-input-wrapper">
                 <svg class="w-5 h-5 search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -39,10 +33,10 @@
             
             <button type="submit" class="btn-search">Cari</button>
             @if(request('search'))
-                <a href="{{ route('users.index') }}" class="btn-reset">Reset</a>
+                <a href="{{ route('users.index', ['per_page' => request('per_page', 10)]) }}" class="btn-reset">Reset</a>
             @endif
         </form>
-    </div> -->
+    </div>
 
     <!-- Users Table -->
     <div class="table-container glass">
@@ -68,20 +62,24 @@
                         <td>{{ $user->created_at->isoFormat('D MMM Y') }}</td>
                         <td>
                             <div class="action-buttons">
-                                <a href="{{ route('users.edit', $user) }}" class="btn-action edit">
+                                @if($user->id)
+                                <a href="{{ route('users.edit', $user->id) }}" class="btn-action edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
-                                <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus user ini?')">
+                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" id="delete-form-{{ $user->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn-action delete">
+                                    <button type="button" class="btn-action delete" onclick="confirmDelete('delete-form-{{ $user->id }}')">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
                                 </form>
+                                @else
+                                <span class="text-dim">N/A</span>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -106,9 +104,9 @@
         <div class="table-footer glass">
             <div class="per-page-footer">
                 <form action="{{ route('users.index') }}" method="GET" id="perPageForm">
-                    @if(request('search'))
-                        <input type="hidden" name="search" value="{{ request('search') }}">
-                    @endif
+                    @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
                     <label for="per_page">Tampilkan:</label>
                     <select name="per_page" onchange="this.form.submit()" class="footer-select">
                         <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>

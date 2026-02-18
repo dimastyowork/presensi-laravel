@@ -3,13 +3,14 @@
 namespace App\Exports;
 
 use App\Models\Presence;
+use App\Services\SsoApiService;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Collection;
 
 class PresencesExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths
 {
@@ -28,19 +29,13 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
             return $this->presences;
         }
 
-        $query = Presence::with('user');
+        $query = Presence::query();
         
-        // Apply filters
         if (isset($this->filters['start_date'])) {
             $query->where('date', '>=', $this->filters['start_date']);
         }
         if (isset($this->filters['end_date'])) {
             $query->where('date', '<=', $this->filters['end_date']);
-        }
-        if (isset($this->filters['unit'])) {
-            $query->whereHas('user', function($q) {
-                $q->where('unit', $this->filters['unit']);
-            });
         }
         if (isset($this->filters['status'])) {
             switch ($this->filters['status']) {
@@ -60,17 +55,13 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
             $query->where('user_id', $this->filters['user_id']);
         }
 
-        if (isset($this->filters['search'])) {
-            $search = $this->filters['search'];
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
-            });
-        }
-        
-        $this->presences = $query->orderBy('date', 'desc')
+        $presences = $query->orderBy('date', 'desc')
                     ->orderBy('time_in', 'desc')
                     ->get();
+
+        $usersMap = app(SsoApiService::class)->getUsersMap();
+        $this->presences = $this->applySsoUserFilter($presences, $usersMap);
+        $this->attachSsoUser($this->presences, $usersMap);
         
         return $this->presences;
     }
@@ -157,5 +148,42 @@ class PresencesExport implements FromCollection, WithHeadings, WithMapping, With
             'K' => 15,     // Status
             'L' => 30,     // Keterangan
         ];
+    }
+
+    private function applySsoUserFilter(Collection $presences, array $usersMap): Collection
+    {
+        return $presences->filter(function (Presence $presence) use ($usersMap) {
+            $user = $usersMap[(string) $presence->user_id] ?? null;
+
+            if (isset($this->filters['unit']) && $this->filters['unit'] !== '') {
+                if (($user['unit'] ?? null) !== $this->filters['unit']) {
+                    return false;
+                }
+            }
+
+            if (isset($this->filters['search']) && $this->filters['search'] !== '') {
+                $needle = strtolower((string) $this->filters['search']);
+                $name = strtolower((string) ($user['name'] ?? ''));
+                $nip = strtolower((string) ($user['nip'] ?? ''));
+                if (!str_contains($name, $needle) && !str_contains($nip, $needle)) {
+                    return false;
+                }
+            }
+
+            return true;
+        })->values();
+    }
+
+    private function attachSsoUser(Collection $presences, array $usersMap): void
+    {
+        foreach ($presences as $presence) {
+            $user = $usersMap[(string) $presence->user_id] ?? null;
+            $presence->setRelation('user', (object) [
+                'id' => $presence->user_id,
+                'name' => $user['name'] ?? 'N/A',
+                'nip' => $user['nip'] ?? '-',
+                'unit' => $user['unit'] ?? '-',
+            ]);
+        }
     }
 }

@@ -24,10 +24,26 @@
             @csrf
             
             <div class="form-grid">
-                <!-- Nama Unit -->
+                <!-- Unit SSO -->
                 <div class="form-group full-width">
-                    <label class="form-label">Nama Unit <span class="required">*</span></label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="form-input @error('name') error @enderror" placeholder="Contoh: IT, HRD, Finance" required>
+                    <label class="form-label">Unit SSO (Opsional)</label>
+                    <select name="sso_unit_id" class="form-input @error('sso_unit_id') error @enderror">
+                        <option value="">Buat unit baru (isi Nama Unit Baru)</option>
+                        @foreach($ssoUnits as $ssoUnit)
+                            <option value="{{ $ssoUnit['id'] }}" {{ (string) old('sso_unit_id') === (string) $ssoUnit['id'] ? 'selected' : '' }}>
+                                {{ $ssoUnit['name'] }} (ID: {{ $ssoUnit['id'] }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('sso_unit_id')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Nama Unit Baru (Jika belum ada di SSO)</label>
+                    <input type="text" name="name" value="{{ old('name') }}" class="form-input @error('name') error @enderror" placeholder="Contoh: KASIR, FARMASI, LAB">
+                    <small class="form-hint">Kosongkan jika memilih unit SSO yang sudah ada.</small>
                     @error('name')
                         <span class="error-message">{{ $message }}</span>
                     @enderror

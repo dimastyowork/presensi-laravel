@@ -37,6 +37,7 @@ return [
 
     'sso' => [
         'url' => env('SSO_URL', 'https://auth.rsasabunda.com'),
+        'token' => env('SSO_API_TOKEN'),
     ],
 
 ];
