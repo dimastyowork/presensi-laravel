@@ -10,7 +10,7 @@ class MenuHelper
         $unit = mb_strtoupper(trim((string) ($user->unit ?? '')));
         $isAdmin = $user && in_array($unit, ['IT', 'HRD', 'SDM & DIKLAT'], true);
 
-        $menuItems = [
+        $aktifitasSaya = [
             [
                 'name' => 'Presensi',
                 'icon' => 'calendar',
@@ -28,45 +28,64 @@ class MenuHelper
             ],
         ];
 
+        $groups = [
+            [
+                'title' => 'Aktifitas Saya',
+                'items' => $aktifitasSaya
+            ]
+        ];
+
         if ($isAdmin) {
-            $menuItems[] = [
-                'name' => 'Laporan HRD',
-                'icon' => 'chart-bar',
-                'path' => '/laporan-hrd',
+            $groups[] = [
+                'title' => 'Laporan & Analisis',
+                'items' => [
+                    [
+                        'name' => 'Laporan HRD',
+                        'icon' => 'chart-bar',
+                        'path' => '/laporan-hrd',
+                    ],
+                    [
+                        'name' => 'Laporan Lembur',
+                        'icon' => 'briefcase',
+                        'path' => '/admin/overtime',
+                    ],
+                ]
             ];
-            $menuItems[] = [
-                'name' => 'Laporan Lembur',
-                'icon' => 'briefcase',
-                'path' => '/admin/overtime',
+
+            $groups[] = [
+                'title' => 'Manajemen Data',
+                'items' => [
+                    [
+                        'name' => 'Manajemen User',
+                        'icon' => 'users',
+                        'path' => '/users',
+                    ],
+                    [
+                        'name' => 'Manajemen Unit',
+                        'icon' => 'building',
+                        'path' => '/units',
+                    ],
+                    [
+                        'name' => 'Manajemen Shift',
+                        'icon' => 'clock',
+                        'path' => '/shifts',
+                    ],
+                ]
             ];
-            $menuItems[] = [
-                'name' => 'Manajemen User',
-                'icon' => 'users',
-                'path' => '/users',
-            ];
-            $menuItems[] = [
-                'name' => 'Manajemen Unit',
-                'icon' => 'building',
-                'path' => '/units',
-            ];
-            $menuItems[] = [
-                'name' => 'Manajemen Shift',
-                'icon' => 'clock',
-                'path' => '/shifts',
-            ];
-            $menuItems[] = [
-                'name' => 'Pengaturan Global',
-                'icon' => 'settings',
-                'path' => '/settings',
+
+            $groups[] = [
+                'title' => 'Pengaturan',
+                'items' => [
+                    [
+                        'name' => 'Pengaturan Global',
+                        'icon' => 'settings',
+                        'path' => '/settings',
+                    ],
+                ]
             ];
         }
 
-        return [
-            [
-                'title' => 'Menu Utama',
-                'items' => $menuItems
-            ],
-        ];
+        return $groups;
     }
 
     public static function getIconSvg($icon)

@@ -292,7 +292,8 @@
 
     /* Table */
     .content-card { border-radius: 35px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); }
-    .table-custom { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-custom { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1000px; }
     .table-custom th { background: var(--hover-bg); padding: 22px 30px; text-align: left; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim); border-bottom: 1px solid var(--card-border); }
     .table-custom td { padding: 22px 30px; border-bottom: 1px solid var(--card-border); transition: all 0.2s; vertical-align: middle; color: var(--text-main); }
     .table-row-hover:hover td { background: var(--hover-bg); }
