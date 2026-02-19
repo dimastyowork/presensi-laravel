@@ -4,7 +4,6 @@
 @section('content')
 <div class="unit-management-container">
     
-    <!-- Header -->
     <div class="page-header">
         <div>
             <h1 class="page-title">Manajemen <span class="text-brand">Unit</span></h1>
@@ -12,7 +11,6 @@
         </div>
     </div>
 
-    <!-- Success Message -->
     @if(session('success'))
         <div class="alert-success glass mb-6">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,7 +20,6 @@
         </div>
     @endif
 
-    <!-- Search Section -->
     <div class="search-section glass">
         <form action="{{ route('units.index') }}" method="GET" class="search-form">
             <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
@@ -40,8 +37,6 @@
         </form>
     </div>
 
-
-    <!-- Units Table -->
     <div class="table-container glass">
         <div class="table-wrapper">
             <table class="data-table">
@@ -282,42 +277,6 @@
         background-color: var(--card-bg);
     }
 
-    /* Fix Pagination Styling & Double View */
-    .pagination-wrapper nav {
-        display: flex;
-        justify-content: center;
-    }
-
-    /* Laravel Pagination Metadata Styling (Dark Mode) */
-    .pagination-wrapper .text-sm {
-        color: var(--text-secondary) !important;
-    }
-
-    .pagination-wrapper .font-medium {
-        color: var(--text-main) !important;
-    }
-
-    .dark .pagination-wrapper .text-gray-700,
-    .dark .pagination-wrapper .text-gray-500 {
-        color: var(--text-secondary) !important;
-    }
-
-    /* Hide the mobile view on desktop and vice versa */
-    .pagination-wrapper nav > div:first-child { 
-        display: flex;
-    }
-    .pagination-wrapper nav > div:last-child { 
-        display: none;
-    }
-
-    @media (min-width: 640px) {
-        .pagination-wrapper nav > div:first-child { 
-            display: none !important; 
-        }
-        .pagination-wrapper nav > div:last-child { 
-            display: flex !important; 
-        }
-    }
 
     .page-header {
         display: flex;
@@ -456,52 +415,9 @@
         font-size: 0.875rem;
     }
 
-    .pagination-wrapper {
-        padding: 20px;
-        border-top: 1px solid var(--card-border);
-    }
-
-    /* Pagination Customization */
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 4px;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .page-item .page-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        color: var(--text-secondary);
-        font-weight: 600;
-        font-size: 0.875rem;
-        background: var(--hover-bg);
-        border: 1px solid transparent;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .page-item.active .page-link {
-        background: var(--brand-blue);
-        color: white;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
-    }
-
-    .page-item.disabled .page-link {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-item:not(.active):not(.disabled) .page-link:hover {
-        background: var(--card-bg);
-        border-color: var(--brand-blue);
-        color: var(--brand-blue);
+    /* Pagination Styles */
+    .pagination-container {
+        margin-top: 20px;
     }
 
     .glass {

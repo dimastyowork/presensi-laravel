@@ -4,7 +4,6 @@
 @section('content')
 <div class="unit-form-container">
     
-    <!-- Header -->
     <div class="page-header">
         <div>
             <h1 class="page-title">Edit <span class="text-brand">Unit</span></h1>
@@ -18,20 +17,17 @@
         </a>
     </div>
 
-    <!-- Form -->
     <div class="form-card glass">
         <form action="{{ route('units.update', $unit->id) }}" method="POST">
             @csrf
             @method('PUT')
             
             <div class="form-grid">
-                <!-- Nama Unit -->
                 <div class="form-group full-width">
                     <label class="form-label">Unit (SSO)</label>
                     <input type="text" value="{{ $unit->name }} (ID: {{ $unit->id }})" class="form-input" readonly>
                 </div>
 
-                <!-- Working Days -->
                 <div class="form-group full-width">
                     <label class="form-label">Hari Kerja <span class="required">*</span></label>
                     <p class="form-hint">Pilih hari kerja yang berlaku untuk unit ini (Kosongkan jika berlaku setiap hari).</p>

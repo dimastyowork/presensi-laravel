@@ -4,7 +4,6 @@
 @section('content')
 <div class="unit-form-container">
     
-    <!-- Header -->
     <div class="page-header">
         <div>
             <h1 class="page-title">Tambah <span class="text-brand">Unit Baru</span></h1>
@@ -18,13 +17,11 @@
         </a>
     </div>
 
-    <!-- Form -->
     <div class="form-card glass">
         <form action="{{ route('units.store') }}" method="POST">
             @csrf
             
             <div class="form-grid">
-                <!-- Unit SSO -->
                 <div class="form-group full-width">
                     <label class="form-label">Unit SSO (Opsional)</label>
                     <select name="sso_unit_id" class="form-input @error('sso_unit_id') error @enderror">
@@ -49,7 +46,6 @@
                     @enderror
                 </div>
 
-                <!-- Working Days -->
                 <div class="form-group full-width">
                     <label class="form-label">Hari Kerja <span class="required">*</span></label>
                     <p class="form-hint">Pilih hari kerja yang berlaku untuk unit ini (Kosongkan jika berlaku setiap hari).</p>

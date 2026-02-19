@@ -48,13 +48,13 @@ class UnitController extends Controller
         $total = $items->count();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();
 
-        $units = new LengthAwarePaginator(
+        $units = (new LengthAwarePaginator(
             $pagedItems,
             $total,
             $perPage,
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
-        );
+        ))->onEachSide(1);
 
         return view('pages.units.index', compact('units'));
 }

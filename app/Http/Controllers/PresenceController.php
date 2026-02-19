@@ -348,6 +348,7 @@ class PresenceController extends Controller
             ->orderBy('date', 'desc')
             ->orderBy('time_in', 'desc')
             ->paginate(10)
+            ->onEachSide(1)
             ->withQueryString();
 
         $presenceStats = Presence::where('user_id', $userId)
@@ -433,13 +434,13 @@ class PresenceController extends Controller
         
         $pagedItems = $filteredPresences->forPage($currentPage, $perPage)->values();
         
-        $presences = new LengthAwarePaginator(
+        $presences = (new LengthAwarePaginator(
             $pagedItems,
             $filteredPresences->count(),
             $perPage,
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
-        );
+        ))->onEachSide(1);
 
         $unitsResponse = $this->ssoService->getUnits(['all' => true]);
         $unitsRaw = $unitsResponse['data'] ?? (isset($unitsResponse[0]) ? $unitsResponse : []);

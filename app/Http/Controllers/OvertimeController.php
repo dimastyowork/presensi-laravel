@@ -39,10 +39,12 @@ class OvertimeController extends Controller
             $query->whereDate('date', '<=', $request->end_date);
         }
         
+        $perPage = $request->get('per_page', 10);
         $overtimes = $query
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(10)
+            ->paginate($perPage)
+            ->onEachSide(1)
             ->withQueryString();
 
         $stats = [
@@ -131,17 +133,17 @@ class OvertimeController extends Controller
             $items = $items->filter(fn($item) => $item->user_unit === $request->unit);
         }
 
-        $perPage = 10;
+        $perPage = $request->get('per_page', 10);
         $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();
         
-        $overtimes = new \Illuminate\Pagination\LengthAwarePaginator(
+        $overtimes = (new \Illuminate\Pagination\LengthAwarePaginator(
             $pagedItems,
             $items->count(),
             $perPage,
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
-        );
+        ))->onEachSide(1);
 
         $unitsResponse = $this->ssoService->getUnits(['all' => true]);
         $unitsRaw = $unitsResponse['data'] ?? (isset($unitsResponse[0]) ? $unitsResponse : []);

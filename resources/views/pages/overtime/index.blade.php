@@ -177,12 +177,29 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
+            <div class="table-footer glass">
+                <div class="per-page-footer">
+                    <form action="{{ route('overtime.index') }}" method="GET" id="perPageForm">
+                        @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endforeach
+                        <label for="per_page">Tampilkan:</label>
+                        <select name="per_page" onchange="this.form.submit()" class="footer-select">
+                            <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                            <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                            <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                        </select>
+                    </form>
+                </div>
 
-    <!-- Pagination -->
-    <div class="pagination-container mt-6">
-        {{ $overtimes->links() }}
+                @if($overtimes->hasPages())
+                <div class="pagination-wrapper">
+                    {{ $overtimes->links() }}
+                </div>
+                @endif
+            </div>
+        </div>
     </div>
 </div>
 
@@ -193,6 +210,7 @@
         --brand-orange: #f97316;
         --brand-emerald: #10b981;
         --text-main: #1e293b;
+        --text-secondary: #64748b;
         --text-dim: #94a3b8;
         --card-bg: #ffffff;
         --card-border: rgba(0, 0, 0, 0.05);
@@ -201,6 +219,7 @@
 
     .dark {
         --text-main: #f8fafc;
+        --text-secondary: #94a3b8;
         --text-dim: #64748b;
         --card-bg: #1f2937;
         --card-border: rgba(255, 255, 255, 0.08);
@@ -274,58 +293,57 @@
     .btn-reset { color: var(--text-dim); }
     .btn-reset:hover { color: var(--brand-orange); background: var(--hover-bg); }
 
-    /* Pagination Styles */
-    .pagination-container nav {
+    /* Table Footer */
+    .table-footer {
         display: flex;
-        flex-direction: column;
+        justify-content: space-between;
         align-items: center;
+        padding: 20px;
+        border-top: 1px solid var(--card-border);
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .per-page-footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .footer-select {
+        padding: 8px 16px;
+        background: var(--hover-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        color: var(--text-main);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
+    }
+
+    .dark .footer-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    }
+
+    .footer-select:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        background-color: var(--card-bg);
+    }
+
+    /* Pagination Styles */
+    .pagination-wrapper {
+        display: flex;
         justify-content: center;
-        gap: 16px;
-        width: 100%;
-        margin-top: 30px;
-    }
-
-    @media (min-width: 768px) {
-        .pagination-container nav {
-            flex-direction: row;
-            justify-content: space-between;
-        }
-    }
-
-    .pagination-container .text-sm {
-        color: var(--text-dim) !important;
-    }
-
-    .pagination-container .font-medium {
-        color: var(--text-main) !important;
-    }
-
-    .dark .pagination-container span,
-    .dark .pagination-container p {
-        color: var(--text-dim) !important;
-    }
-
-    .dark .pagination-container nav a {
-        background-color: var(--card-bg) !important;
-        border-color: var(--card-border) !important;
-        color: var(--text-dim) !important;
-    }
-
-    .dark .pagination-container nav a:hover {
-        background-color: var(--hover-bg) !important;
-        color: var(--text-main) !important;
-    }
-
-    .dark .pagination-container nav span[aria-current="page"] > span {
-        background-color: var(--brand-blue) !important;
-        border-color: var(--brand-blue) !important;
-        color: white !important;
-    }
-
-    @media (min-width: 640px) {
-        .pagination-container nav > div:first-child { 
-            display: none !important; 
-        }
     }
 
     @media (max-width: 900px) {

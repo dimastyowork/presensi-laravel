@@ -74,7 +74,6 @@
         }
     }
 }">
-    <!-- Header Content -->
     <div class="history-header">
         <div class="header-main">
             <h1 class="header-title">Riwayat <span class="text-brand">Aktivitas</span></h1>
@@ -82,9 +81,7 @@
         </div>
     </div>
 
-    <!-- Quick Stats Tiles -->
     <div class="stats-grid">
-        <!-- Total Kehadiran -->
         <div class="stat-card card-gradient shadow-premium">
             <div class="card-blur-circle"></div>
             <p class="stat-label">Total Kehadiran</p>
@@ -95,7 +92,6 @@
             <div class="stat-badge-pill">Periode: {{ date('F Y') }}</div>
         </div>
 
-        <!-- Detail Stats -->
         <div class="stat-group">
             <div class="stat-card glass shadow-premium">
                 <p class="stat-label text-dim">Log Terakhir</p>
@@ -146,7 +142,6 @@
         </div>
     </div>
 
-    <!-- Calendar Hub Section -->
     <div class="calendar-section animate-fade-in">
         <div class="data-hub glass shadow-premium" style="padding: 40px;">
             <div class="hub-header-custom">
@@ -189,75 +184,8 @@
         </div>
     </div>
 
-    <!-- Detail Modal (Alpine.js) -->
-    <div x-show="showModal" 
-         class="modal-overlay" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         x-cloak
-         @click="showModal = false">
-        
-        <div class="modal-content glass shadow-high" @click.stop>
-            <template x-if="selectedData">
-                <div>
-                    <div class="modal-header">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div>
-                                <h2 class="text-main" x-text="selectedData.dayName"></h2>
-                                <p class="text-dim uppercase tracking-widest font-black" style="font-size: 10px;" x-text="selectedData.dateFormatted"></p>
-                            </div>
-                            <template x-if="selectedData.status">
-                                <span :class="selectedData.status === 'Terlambat' ? 'badge-warning' : 'badge-primary'" 
-                                      class="status-badge-mini" 
-                                      x-text="selectedData.status"></span>
-                            </template>
-                        </div>
-                        <template x-if="selectedData.shift_name">
-                            <p class="text-brand font-bold text-xs mt-2" x-text="'Shift: ' + selectedData.shift_name"></p>
-                        </template>
-                    </div>
-
-                    <div class="modal-body">
-                        <div class="time-grid">
-                            <div class="time-card glass blue-border">
-                                <span class="text-dim label-tiny">Masuk</span>
-                                <h3 class="text-main text-2xl font-black" x-text="formatTime(selectedData.time_in)"></h3>
-                            </div>
-                            <div class="time-card glass orange-border">
-                                <span class="text-dim label-tiny">Pulang</span>
-                                <h3 class="text-main text-2xl font-black" x-text="formatTime(selectedData.time_out)"></h3>
-                            </div>
-                        </div>
-
-                        <div class="photo-grid mt-6" x-show="selectedData.image_in || selectedData.image_out" style="display: flex; gap: 15px; margin-top: 20px;">
-                            <template x-if="selectedData.image_in">
-                                <div class="photo-box">
-                                    <img :src="'/images/' + selectedData.image_in" class="photo-img shadow-premium">
-                                    <span class="photo-label bg-blue shadow-blue">IN</span>
-                                </div>
-                            </template>
-                            <template x-if="selectedData.image_out">
-                                <div class="photo-box">
-                                    <img :src="'/images/' + selectedData.image_out" class="photo-img shadow-premium">
-                                    <span class="photo-label bg-orange shadow-orange">OUT</span>
-                                </div>
-                            </template>
-                        </div>
-
-                        <div class="note-box glass mt-6" x-show="selectedData.note" style="margin-top: 20px; padding: 20px; border-radius: 20px;">
-                            <span class="text-dim label-tiny">Catatan</span>
-                            <p class="text-main text-sm italic mt-1" x-text="selectedData.note"></p>
-                        </div>
-                    </div>
-                </div>
-            </template>
-
-            <button class="btn-close glass" @click="showModal = false">Tutup Detail</button>
-        </div>
+    <div class="pagination-container mt-12 mb-8">
+        {{ $presences->links() }}
     </div>
 </div>
 
@@ -462,49 +390,11 @@
         .photo-grid { flex-direction: column; }
     }
 
-    /* Pagination Customization */
-    .pagination-wrapper {
-        padding: 20px;
+    /* Pagination Styling */
+    .pagination-container {
         display: flex;
         justify-content: center;
         width: 100%;
-    }
-    
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 4px;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .page-item .page-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        color: var(--text-secondary);
-        font-weight: 600;
-        font-size: 0.875rem;
-        background: var(--hover-bg);
-        border: 1px solid var(--card-border);
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .page-item.active .page-link {
-        background: var(--brand-blue);
-        color: white;
-        border-color: var(--brand-blue);
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
-    }
-
-    .page-item.disabled .page-link {
-        opacity: 0.5;
-        cursor: not-allowed;
     }
 
     @media (max-width: 480px) {

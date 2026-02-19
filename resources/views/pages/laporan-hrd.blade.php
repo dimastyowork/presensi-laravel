@@ -1074,73 +1074,9 @@
         background-color: var(--card-bg);
     }
 
-    .pagination-wrapper nav {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        width: 100%;
-    }
-
-    @media (min-width: 768px) {
-        .pagination-wrapper nav {
-            flex-direction: row;
-            justify-content: space-between;
-        }
-    }
-
-    .pagination-wrapper .text-sm {
-        color: var(--text-secondary) !important;
-    }
-
-    .pagination-wrapper .font-medium {
-        color: var(--text-main) !important;
-    }
-
-    .dark .pagination-wrapper .text-gray-700,
-    .dark .pagination-wrapper .text-gray-500,
-    .dark .pagination-wrapper span,
-    .dark .pagination-wrapper p {
-        color: var(--text-secondary) !important;
-    }
-
-    .dark .pagination-wrapper .font-medium {
-        color: var(--text-main) !important;
-    }
-
-    .dark .pagination-wrapper nav a {
-        background-color: var(--card-bg) !important;
-        border-color: var(--card-border) !important;
-        color: var(--text-secondary) !important;
-    }
-
-    .dark .pagination-wrapper nav a:hover {
-        background-color: var(--hover-bg) !important;
-        color: var(--text-main) !important;
-    }
-
-    .dark .pagination-wrapper nav span[aria-current="page"] > span {
-        background-color: var(--brand-blue) !important;
-        border-color: var(--brand-blue) !important;
-        color: white !important;
-    }
-
-    /* Hide the mobile summary only if buttons are shown */
-    .pagination-wrapper nav > div:first-child { 
-        display: flex;
-        justify-content: center;
-    }
-    
-    .pagination-wrapper nav > div:last-child { 
-        display: flex;
-        justify-content: center;
-    }
-
-    @media (min-width: 640px) {
-        .pagination-wrapper nav > div:first-child { 
-            display: none !important; 
-        }
+    /* Pagination Styles */
+    .pagination-container {
+        margin-top: 20px;
     }
 
     .glass {

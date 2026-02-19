@@ -68,13 +68,13 @@ class UserController extends Controller
         $total = $items->count();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();
 
-        $users = new LengthAwarePaginator(
+        $users = (new LengthAwarePaginator(
             $pagedItems,
             $total,
             $perPage,
             $currentPage,
             ['path' => $request->url(), 'query' => $request->query()]
-        );
+        ))->onEachSide(1);
 
         return view('pages.users.index', compact('users', 'allShifts'));
     }
