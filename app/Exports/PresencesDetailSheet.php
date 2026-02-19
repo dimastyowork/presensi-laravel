@@ -227,14 +227,18 @@ class PresencesDetailSheet implements FromCollection, WithHeadings, WithMapping,
         }
 
         $shiftKey = mb_strtolower(trim((string) $presence->shift_name));
-        /** @var Shift|null $shift */
         $shift = $this->shiftsByName[$shiftKey] ?? null;
+
         if (!$shift) {
             return 0;
         }
 
-        $shiftStart = Carbon::parse($presence->date . ' ' . $shift->start_time);
-        $clockIn = Carbon::parse($presence->date . ' ' . $presence->time_in);
+        // Use explicit date string to avoid Carbon __toString() issues
+        $dateStr = Carbon::parse($presence->date)->toDateString();
+        $shiftStart = Carbon::parse($dateStr . ' ' . $shift->start_time);
+        $clockIn = Carbon::parse($dateStr . ' ' . $presence->time_in);
+
+        // Handle night shifts crossing midnight
         $shiftStartRaw = Carbon::parse($shift->start_time);
         $shiftEndRaw = Carbon::parse($shift->end_time);
 
@@ -242,11 +246,11 @@ class PresencesDetailSheet implements FromCollection, WithHeadings, WithMapping,
             $clockIn->addDay();
         }
 
-        if ($clockIn->lte($shiftStart)) {
-            return 0;
+        if ($clockIn->gt($shiftStart)) {
+            return (int) $clockIn->diffInMinutes($shiftStart);
         }
 
-        return $clockIn->diffInMinutes($shiftStart);
+        return 0;
     }
 
     private function prepareOvertimeMap(Collection $presences): void
