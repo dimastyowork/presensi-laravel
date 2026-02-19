@@ -23,8 +23,11 @@ class UserController extends Controller
         $allShifts = Shift::all();
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = (int) $request->input('page', 1);
+        $search = trim((string) $request->input('search', ''));
         
-        $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
+        // Do not forward "search" to SSO because some backends apply case-sensitive matching.
+        // We fetch full data then filter locally in a case-insensitive way.
+        $params = array_merge($request->except(['page', 'per_page', 'search']), ['all' => true]);
         $response = $this->ssoService->getUsers($params);
         
         if (!isset($response['data'])) {
@@ -50,6 +53,7 @@ class UserController extends Controller
             $obj->name = $obj->name ?? $obj->nama ?? $obj->name_user ?? $obj->nip ?? 'N/A';
             $obj->nip = $obj->nip ?? $obj->username ?? '-';
             $obj->unit = $obj->unit ?? $obj->nama_unit ?? $obj->unit_name ?? '-';
+            $obj->email = $obj->email ?? '-';
             
             $shiftRecords = $userShifts->get($obj->id, collect());
             $shiftNames = $shiftRecords->pluck('shift.name')->filter()->values();
@@ -64,6 +68,21 @@ class UserController extends Controller
             }
             return $obj;
         })->sortBy('nip')->values();
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $items = $items->filter(function ($user) use ($needle) {
+                $name = mb_strtolower((string) ($user->name ?? ''));
+                $nip = mb_strtolower((string) ($user->nip ?? ''));
+                $unit = mb_strtolower((string) ($user->unit ?? ''));
+                $email = mb_strtolower((string) ($user->email ?? ''));
+
+                return str_contains($name, $needle)
+                    || str_contains($nip, $needle)
+                    || str_contains($unit, $needle)
+                    || str_contains($email, $needle);
+            })->values();
+        }
 
         $total = $items->count();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();

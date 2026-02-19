@@ -72,6 +72,15 @@
             this.selectedData = data;
             this.showModal = true;
         }
+    },
+
+    getImageUrl(path) {
+        if (!path) {
+            return null;
+        }
+
+        const fileName = String(path).split('/').pop();
+        return `{{ url('/images/presences') }}/${fileName}`;
     }
 }">
     <div class="history-header">
@@ -186,6 +195,63 @@
 
     <div class="pagination-container mt-12 mb-8">
         {{ $presences->links() }}
+    </div>
+
+    <div
+        x-show="showModal"
+        x-cloak
+        class="modal-overlay"
+        @click.self="showModal = false"
+    >
+        <div class="modal-content" x-show="selectedData">
+            <div class="modal-header">
+                <h2 x-text="selectedData && selectedData.dateFormatted ? selectedData.dateFormatted : '-'"></h2>
+                <p>
+                    <span x-text="selectedData && selectedData.dayName ? selectedData.dayName : '-'"></span>
+                    <span> • Shift </span>
+                    <span x-text="selectedData && selectedData.shift_name ? selectedData.shift_name : '-'"></span>
+                </p>
+            </div>
+
+            <div class="time-grid">
+                <div class="time-card blue-border">
+                    <span class="label-tiny">Jam Masuk</span>
+                    <strong class="text-main" x-text="formatTime(selectedData && selectedData.time_in ? selectedData.time_in : null)"></strong>
+                </div>
+                <div class="time-card orange-border">
+                    <span class="label-tiny">Jam Keluar</span>
+                    <strong class="text-main" x-text="formatTime(selectedData && selectedData.time_out ? selectedData.time_out : null)"></strong>
+                </div>
+            </div>
+
+            <div class="time-grid" style="margin-top: 20px;">
+                <div class="time-card">
+                    <span class="label-tiny">Status</span>
+                    <strong class="text-main" x-text="selectedData && selectedData.status ? selectedData.status : '-'"></strong>
+                </div>
+                <div class="time-card">
+                    <span class="label-tiny">Catatan</span>
+                    <strong class="text-main" x-text="selectedData && selectedData.note ? selectedData.note : '-'"></strong>
+                </div>
+            </div>
+
+            <div class="time-grid" style="margin-top: 20px;">
+                <template x-if="selectedData && selectedData.image_in">
+                    <div class="photo-box">
+                        <img :src="getImageUrl(selectedData.image_in)" alt="Foto masuk" class="photo-img">
+                        <span class="photo-label bg-blue">MASUK</span>
+                    </div>
+                </template>
+                <template x-if="selectedData && selectedData.image_out">
+                    <div class="photo-box">
+                        <img :src="getImageUrl(selectedData.image_out)" alt="Foto keluar" class="photo-img">
+                        <span class="photo-label bg-orange">KELUAR</span>
+                    </div>
+                </template>
+            </div>
+
+            <button type="button" class="btn-close" @click="showModal = false">Tutup</button>
+        </div>
     </div>
 </div>
 
@@ -339,32 +405,37 @@
     .modal-content { 
         background: var(--card-bg); 
         width: 100%; 
-        max-width: 500px; 
+        max-width: 380px; 
         border-radius: 40px; 
-        padding: 40px; 
+        padding: 22px; 
         border: 1px solid var(--card-border); 
-        overflow: hidden; 
+        max-height: 85vh;
+        overflow-y: auto;
+        overflow-x: hidden;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
         position: relative;
         z-index: 100000;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
+    .modal-content::-webkit-scrollbar { width: 0; height: 0; display: none; }
     
     .modal-header { margin-bottom: 20px; }
-    .modal-header h2 { font-size: 1.75rem; font-weight: 900; color: var(--text-main); margin: 0; }
+    .modal-header h2 { font-size: 1.35rem; font-weight: 900; color: var(--text-main); margin: 0; }
     .modal-header p { color: var(--text-dim); margin-top: 4px; }
     
-    .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
-    .time-card { padding: 20px; border-radius: 25px; text-align: center; background: var(--hover-bg); border: 1px solid var(--card-border); transition: all 0.3s ease; }
+    .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+    .time-card { padding: 14px; border-radius: 16px; text-align: center; background: var(--hover-bg); border: 1px solid var(--card-border); transition: all 0.3s ease; }
     .blue-border { border-left: 5px solid var(--brand-blue); }
     .orange-border { border-left: 5px solid var(--brand-orange); }
     .label-tiny { font-size: 0.625rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); display: block; margin-bottom: 8px; }
     
-    .photo-img { width: 100%; height: 200px; object-fit: cover; border-radius: 25px; transition: transform 0.5s ease; }
-    .photo-box { flex: 1; position: relative; border-radius: 25px; overflow: hidden; }
+    .photo-img { width: 100%; height: 120px; object-fit: cover; border-radius: 16px; transition: transform 0.5s ease; }
+    .photo-box { flex: 1; position: relative; border-radius: 16px; overflow: hidden; }
     .photo-box:hover .photo-img { transform: scale(1.1); }
     .photo-label { position: absolute; top: 15px; right: 15px; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 11px; color: white; backdrop-blur: 10px; }
     
-    .btn-close { width: 100%; margin-top: 30px; padding: 18px; border-radius: 20px; border: 1px solid var(--card-border); font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--brand-blue); cursor: pointer; transition: all 0.3s ease; background: var(--hover-bg); }
+    .btn-close { width: 100%; margin-top: 18px; padding: 12px; border-radius: 14px; border: 1px solid var(--card-border); font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--brand-blue); cursor: pointer; transition: all 0.3s ease; background: var(--hover-bg); }
     .btn-close:hover { background: var(--brand-blue); color: white; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3); }
 
     .glass { background: var(--hub-bg); backdrop-blur: 20px; border: 1px solid var(--card-border); }
@@ -388,6 +459,13 @@
         .presence-indicators { gap: 2px; margin-top: 2px; }
         .time-grid { grid-template-columns: 1fr; }
         .photo-grid { flex-direction: column; }
+        .modal-content { max-width: 300px; padding: 14px; border-radius: 20px; }
+        .modal-header h2 { font-size: 1.1rem; }
+        .modal-header p { font-size: 0.8rem; }
+        .time-grid { gap: 10px; margin-top: 12px; }
+        .time-card { padding: 10px; border-radius: 12px; }
+        .label-tiny { font-size: 0.55rem; margin-bottom: 6px; }
+        .btn-close { margin-top: 12px; padding: 10px; border-radius: 12px; letter-spacing: 1px; }
     }
 
     /* Pagination Styling */
@@ -407,6 +485,9 @@
         .calendar-weekdays span { font-size: 7px; letter-spacing: 0.5px; }
         .nav-btn { width: 40px; height: 40px; }
         .current-month-label { font-size: 1.2rem; }
+        .modal-content { max-width: 270px; padding: 12px; border-radius: 16px; }
+        .time-grid { grid-template-columns: 1fr; }
+        .photo-img { height: 100px; }
     }
 </style>
 @endpush

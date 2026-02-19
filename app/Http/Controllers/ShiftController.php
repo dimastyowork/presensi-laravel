@@ -16,8 +16,8 @@ class ShiftController extends Controller
         $query = Shift::query();
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%");
+            $search = mb_strtolower($request->input('search'));
+            $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
         }
 
         $perPage = (int) $request->input('per_page', 10);

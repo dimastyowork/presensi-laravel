@@ -19,6 +19,7 @@ class UnitController extends Controller
     {
         $perPage = (int) $request->input('per_page', 10);
         $currentPage = (int) $request->input('page', 1);
+        $search = trim((string) $request->input('search', ''));
 
         $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
         $response = $this->ssoService->getUnits($params);
@@ -44,6 +45,16 @@ class UnitController extends Controller
             }
             return $obj;
         });
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $items = $items->filter(function ($unit) use ($needle) {
+                $name = mb_strtolower((string) ($unit->name ?? ''));
+                $id = mb_strtolower((string) ($unit->id ?? ''));
+
+                return str_contains($name, $needle) || str_contains($id, $needle);
+            })->values();
+        }
 
         $total = $items->count();
         $pagedItems = $items->forPage($currentPage, $perPage)->values();
