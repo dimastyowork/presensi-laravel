@@ -69,10 +69,9 @@
                                 </button>
                             </div>
                         </form>
-                        <div class="mt-8 text-center bg-gray-50 dark:bg-gray-800/40 rounded-xl py-3 px-4 border border-gray-100 dark:border-gray-700/50">
-                            <p class="text-[12px] font-semibold text-gray-500 dark:text-gray-400 leading-relaxed">
-                                <span class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-black mb-1">Informasi</span>
-                                Dengan masuk, Anda menyetujui Kebijakan & Ketentuan Penggunaan Sistem Presensi RS ASA BUNDA.
+                        <div class="mt-8 text-center">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Dengan masuk, Anda menyetujui <a class="font-semibold text-brand-500 hover:text-brand-600 dark:hover:text-brand-400">Persetujuan & Kebijakan</a> kami.
                             </p>
                         </div>
                     </div>
