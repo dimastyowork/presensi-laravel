@@ -35,10 +35,15 @@
                 </div>
 
                 {{-- Heading --}}
-                <h1 class="mb-2 text-3xl font-bold text-gray-800 dark:text-white/90">Buat Password Baru</h1>
-                <p class="mb-8 text-sm font-medium leading-relaxed text-gray-500 dark:text-gray-400">
-                    Demi keamanan akun Anda, silakan ganti password bawaan sebelum dapat menggunakan aplikasi.
-                </p>
+                <div class="mb-8">
+                    <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">
+                        Halo, <span class="text-brand-600 dark:text-brand-400">{{ \App\Helpers\NameHelper::getFirstName(Auth::user()->name) }}</span>!
+                    </h1>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white/90 mb-3">Buat Password Baru</h2>
+                    <p class="text-sm font-medium leading-relaxed text-gray-500 dark:text-gray-400">
+                        Demi keamanan akun Anda, silakan ganti password bawaan sebelum dapat menggunakan aplikasi.
+                    </p>
+                </div>
 
                 {{-- Warning --}}
                 @if(session('warning'))
@@ -257,7 +262,7 @@
                             Selamat datang di <strong class="text-gray-900 dark:text-white">Sistem Presensi RS ASA BUNDA</strong>. Sistem ini dirancang untuk memudahkan pengelolaan kehadiran karyawan secara digital, akurat, dan transparan menggunakan teknologi GPS dan verifikasi foto wajah secara langsung (<em>live biometric</em>).
                         </p>
                         <p class="mt-2.5 text-[13px] font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                            Persetujuan ini adalah perjanjian yang mengikat secara hukum antara Anda sebagai pengguna terdaftar dengan RS ASA BUNDA selaku pengelola sistem. Apabila Anda <strong class="text-gray-900 dark:text-white">tidak menyetujui</strong> ketentuan ini, harap segera menghubungi Divisi SDM untuk mendapatkan panduan lebih lanjut.
+                            Persetujuan ini adalah perjanjian yang mengikat secara hukum antara Anda sebagai pengguna terdaftar dengan RS ASA BUNDA selaku pengelola sistem. Apabila Anda <strong class="text-gray-900 dark:text-white">tidak menyetujui</strong> ketentuan ini, harap segera menghubungi unit SDM untuk mendapatkan panduan lebih lanjut.
                         </p>
                     </div>
                 </div>
@@ -275,7 +280,7 @@
                         <ul class="space-y-3">
                             <li class="flex items-start gap-3">
                                 <svg class="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                <span class="text-[13px] text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Identitas:</strong> Nama lengkap, NIK, dan jabatan resmi Anda sesuai data kepegawaian yang berlaku.</span>
+                                <span class="text-[13px] text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Identitas:</strong> Nama lengkap, NIP, dan jabatan resmi Anda sesuai data kepegawaian yang berlaku.</span>
                             </li>
                             <li class="flex items-start gap-3">
                                 <svg class="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -334,7 +339,7 @@
                         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Hari Kerja</p>
-                                <p class="mt-1 text-[12px] leading-relaxed text-gray-600 dark:text-gray-300">Presensi masuk hanya berlaku pada hari kerja unit Anda sesuai jadwal yang ditetapkan oleh Divisi SDM.</p>
+                                <p class="mt-1 text-[12px] leading-relaxed text-gray-600 dark:text-gray-300">Presensi masuk hanya berlaku pada hari kerja unit Anda sesuai jadwal yang ditetapkan oleh unit SDM.</p>
                             </div>
                             <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Jendela Presensi</p>
@@ -346,7 +351,7 @@
                             </div>
                             <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Absen Pulang</p>
-                                <p class="mt-1 text-[12px] leading-relaxed text-gray-600 dark:text-gray-300">Absen pulang aktif selama sesi masuk Anda masih terbuka, memberikan fleksibilitas penyelesaian tugas.</p>
+                                <p class="mt-1 text-[12px] leading-relaxed text-gray-600 dark:text-gray-300">Absen pulang aktif selama 8 Jam setelah sesi masuk Anda, memberikan fleksibilitas penyelesaian tugas.</p>
                             </div>
                             <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Verifikasi GPS & Foto</p>
@@ -368,7 +373,7 @@
                     </h4>
                     <div class="space-y-2.5 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                         <p class="text-[13px] font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                            Seluruh data yang tersimpan dalam sistem kami dilindungi menggunakan enkripsi standar industri. Akses terhadap data sensitif dibatasi secara ketat hanya kepada personel berwenang, yaitu Divisi SDM dan IT RS ASA BUNDA.
+                            Seluruh data yang tersimpan dalam sistem kami dilindungi menggunakan enkripsi standar industri. Akses terhadap data sensitif dibatasi secara ketat hanya kepada personel berwenang, yaitu unit SDM dan IT RS ASA BUNDA.
                         </p>
                         <p class="text-[13px] font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                             Anda bertanggung jawab penuh atas kerahasiaan <strong class="text-gray-900 dark:text-white">username dan password</strong> akun Anda. Segera laporkan kepada tim IT melalui <span class="font-semibold text-indigo-600 dark:text-indigo-400">it-support@rsasabunda.co.id</span> apabila mencurigai adanya akses tidak sah.
@@ -390,7 +395,7 @@
                             </li>
                             <li class="flex items-start gap-3">
                                 <svg class="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                <span class="text-[13px] text-gray-700 dark:text-gray-300">Menjaga kerahasiaan kredensial akun (username & password) dan tidak membagikannya kepada siapapun.</span>
+                                <span class="text-[13px] text-gray-700 dark:text-gray-300">Menjaga kerahasiaan kredensial akun (NIP & password) dan tidak membagikannya kepada siapapun.</span>
                             </li>
                             <li class="flex items-start gap-3">
                                 <svg class="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -398,7 +403,7 @@
                             </li>
                             <li class="flex items-start gap-3">
                                 <svg class="mt-0.5 h-4 w-4 shrink-0 text-indigo-500 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                <span class="text-[13px] text-gray-700 dark:text-gray-300">Segera melapor kepada atasan atau Divisi SDM jika mengalami kendala teknis yang menghambat presensi.</span>
+                                <span class="text-[13px] text-gray-700 dark:text-gray-300">Segera melapor kepada atasan atau unit SDM jika mengalami kendala teknis yang menghambat presensi.</span>
                             </li>
                         </ul>
                     </div>
