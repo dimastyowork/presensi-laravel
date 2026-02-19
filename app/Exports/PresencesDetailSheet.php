@@ -10,15 +10,17 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PresencesDetailSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class PresencesDetailSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle, WithEvents
 {
     protected array $filters;
     private ?Collection $rows = null;
@@ -155,6 +157,21 @@ class PresencesDetailSheet implements FromCollection, WithHeadings, WithMapping,
             'J' => 22,
             'K' => 22,
             'L' => 30,
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $lastColumn = 'L';
+                $lastRow = max(1, $sheet->getHighestRow());
+
+                // Show Excel filter dropdown triangles on Detail Harian header row.
+                $sheet->setAutoFilter("A1:{$lastColumn}{$lastRow}");
+                $sheet->freezePane('A2');
+            },
         ];
     }
 
