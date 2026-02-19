@@ -13,16 +13,14 @@ use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PresencesRecapSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithEvents, WithTitle
+class PresencesRecapSheet implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithEvents, WithTitle
 {
     protected array $filters;
     private ?Collection $presences = null;
@@ -120,23 +118,6 @@ class PresencesRecapSheet implements FromCollection, WithHeadings, WithMapping, 
         ];
     }
 
-    public function styles(Worksheet $sheet)
-    {
-        return [
-            4 => [
-                'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true, 'size' => 11],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '1E3A8A'],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-            ],
-        ];
-    }
-
     public function columnWidths(): array
     {
         return [
@@ -189,6 +170,18 @@ class PresencesRecapSheet implements FromCollection, WithHeadings, WithMapping, 
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'DBEAFE'],
+                    ],
+                ]);
+
+                $sheet->getStyle("A4:{$lastColumn}4")->applyFromArray([
+                    'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true, 'size' => 11],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '1E3A8A'],
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
                     ],
                 ]);
 

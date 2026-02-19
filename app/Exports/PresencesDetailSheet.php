@@ -109,7 +109,7 @@ class PresencesDetailSheet implements FromCollection, WithHeadings, WithMapping,
 
         return [
             $this->rowNumber,
-            Carbon::parse($presence->date)->isoFormat('D MMMM Y'),
+            Carbon::parse($presence->date)->format('d-m-Y'),
             $presence->user->nip ?? '-',
             $presence->user->name ?? 'N/A',
             $presence->user->unit ?? '-',
