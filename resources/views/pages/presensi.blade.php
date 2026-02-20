@@ -862,9 +862,12 @@ class="presence-container">
     .camera-viewport-compact {
         position: relative;
         width: 100%;
-        aspect-ratio: 4/3;
         background: #000;
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
     }
     @media (min-width: 768px) {
         .camera-viewport-compact { aspect-ratio: 16/9; max-height: 400px; }
@@ -1091,9 +1094,8 @@ class="presence-container">
     }
     .video-preview { 
         width: 100%; 
-        height: 100%; 
-        object-fit: cover;
-        object-position: center;
+        height: auto; 
+        object-fit: contain;
         transform: translateZ(0);
         -webkit-transform: translateZ(0);
     }
@@ -1106,8 +1108,6 @@ class="presence-container">
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
         z-index: 2;
         pointer-events: none;
     }
@@ -1701,7 +1701,8 @@ class="presence-container">
 
         if (!video || !canvas) return;
 
-        const displaySize = { width: video.videoWidth, height: video.videoHeight };
+        // Gunakan offsetWidth/Height agar sesuai dengan tampilan CSS (Auto-Scale)
+        const displaySize = { width: video.offsetWidth, height: video.offsetHeight };
         faceapi.matchDimensions(canvas, displaySize);
 
         const faceOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
