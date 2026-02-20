@@ -5,9 +5,44 @@
 <div x-data="{ 
     step: 'choice', 
     type: 'in',
-    hasIn: {{ ($presence && $presence->time_in) ? 'true' : 'false' }},
-    hasOut: {{ ($presence && $presence->time_out) ? 'true' : 'false' }},
-}" class="presence-container">
+    isLocReady: false,
+    locStatusText: 'Mendeteksi GPS...',
+    locDistance: null,
+    hasIn: {{ ($todayPresence && $todayPresence->time_in) ? 'true' : 'false' }},
+    hasOut: {{ ($todayPresence && $todayPresence->time_out) ? 'true' : 'false' }},
+
+    init() {
+        window.presenceApp = this;
+    },
+
+    async startTracking() {
+        this.isLocReady = false;
+        this.locStatusText = 'Mendeteksi GPS...';
+        this.locDistance = null;
+        
+        if (typeof window.startLocationTracking === 'function') {
+            window.startLocationTracking();
+        }
+    },
+
+    proceed() {
+        if (!this.isLocReady) return;
+        
+        // 1. Stop tracking via pure JS
+        if (typeof window.stopLocationTracking === 'function') {
+            window.stopLocationTracking();
+        }
+        
+        // 2. Change step
+        this.step = 'form';
+        
+        // 3. Start camera
+        setTimeout(() => {
+            if (typeof window.startCamera === 'function') window.startCamera();
+        }, 150);
+    }
+}" 
+class="presence-container">
 
     <template x-if="step === 'choice'">
         <div class="choice-screen animate-fade-in">
@@ -95,7 +130,7 @@
             @endif
 
             <div class="choice-cards">
-                <div @click="if(!hasIn && {{ $isShiftSelected ? 'true' : 'false' }} && {{ $isWorkingDay ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) { type = 'in'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
+                <div @click="if(!hasIn && {{ $isShiftSelected ? 'true' : 'false' }} && {{ $isWorkingDay ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} && !{{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) { type = 'in'; step = 'location'; $nextTick(() => { startTracking(); }) }" 
                     :class="(hasIn || !{{ $isShiftSelected ? 'true' : 'false' }} || !{{ $isWorkingDay ? 'true' : 'false' }} || {{ $activeShiftInfo['is_expired'] ? 'true' : 'false' }} || {{ $activeShiftInfo['is_too_early'] ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-blue'"
                     class="presence-card">
                     
@@ -107,7 +142,7 @@
                     <h3 class="card-title">Absen Masuk {{ $activeShiftInfo['shift_name'] ? '- ' . $activeShiftInfo['shift_name'] : '' }}</h3>
                     <p class="card-status" :class="hasIn ? 'status-active' : ''">
                         <template x-if="hasIn">
-                            <span>Sudah Terdaftar • {{ $presence && $presence->time_in ? \Carbon\Carbon::parse($presence->time_in)->format('H:i') : '' }}</span>
+                            <span>Sudah Terdaftar • {{ $todayPresence && $todayPresence->time_in ? \Carbon\Carbon::parse($todayPresence->time_in)->format('H:i') : '' }}</span>
                         </template>
                         <template x-if="!hasIn">
                             <span>
@@ -133,8 +168,8 @@
                     </template>
                 </div>
 
-                <div @click="if(hasIn && !hasOut && !{{ $isStaleOut ? 'true' : 'false' }}) { type = 'out'; step = 'form'; $nextTick(() => { startCamera(); getLocation(); }) }" 
-                    :class="(hasOut || !hasIn || {{ $isStaleOut ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-orange'"
+                <div @click="if(hasIn && !hasOut && !{{ $isTodayStaleOut ? 'true' : 'false' }}) { type = 'out'; step = 'location'; $nextTick(() => { startTracking(); }) }" 
+                    :class="(hasOut || !hasIn || {{ $isTodayStaleOut ? 'true' : 'false' }}) ? 'card-disabled' : 'card-entry card-orange'"
                     class="presence-card">
                     
                     <div class="card-icon-wrapper">
@@ -145,13 +180,13 @@
                     <h3 class="card-title">Absen Pulang</h3>
                     <p class="card-status" :class="hasOut ? 'status-orange' : ''">
                         <template x-if="hasOut">
-                            <span>Sudah Terdaftar • {{ $presence && $presence->time_out ? \Carbon\Carbon::parse($presence->time_out)->format('H:i') : '' }}</span>
+                            <span>Sudah Terdaftar • {{ $todayPresence && $todayPresence->time_out ? \Carbon\Carbon::parse($todayPresence->time_out)->format('H:i') : '' }}</span>
                         </template>
                         <template x-if="!hasOut">
                             <span>
-                                @if(!($presence && $presence->time_in))
+                                @if(!($todayPresence && $todayPresence->time_in))
                                     Masuk dahulu
-                                @elseif($isStaleOut)
+                                @elseif($isTodayStaleOut)
                                     Batas waktu pulang berakhir (8 Jam)
                                 @else
                                     Selesaikan tugas
@@ -168,7 +203,7 @@
                 </div>
             </div>
 
-            @if($presence)
+            @if($presenceForDisplay)
             <div class="summary-container animate-slide-up">
                 <div class="summary-divider">
                     <span class="divider-text">Ringkasan Kehadiran</span>
@@ -176,11 +211,11 @@
                 <div class="summary-grid">
                     <div class="summary-pill glass">
                         <p class="summary-label text-emerald">Check In</p>
-                        <p class="summary-time">{{ $presence->time_in ? \Carbon\Carbon::parse($presence->time_in)->format('H:i') : '--:--' }}</p>
+                        <p class="summary-time">{{ $presenceForDisplay->time_in ? \Carbon\Carbon::parse($presenceForDisplay->time_in)->format('H:i') : '--:--' }}</p>
                     </div>
                     <div class="summary-pill glass">
                         <p class="summary-label text-orange">Check Out</p>
-                        <p class="summary-time">{{ $presence->time_out ? \Carbon\Carbon::parse($presence->time_out)->format('H:i') : '--:--' }}</p>
+                        <p class="summary-time">{{ $presenceForDisplay->time_out ? \Carbon\Carbon::parse($presenceForDisplay->time_out)->format('H:i') : '--:--' }}</p>
                     </div>
                 </div>
             </div>
@@ -188,115 +223,158 @@
         </div>
     </template>
 
-    <template x-if="step === 'form'">
+    {{-- ===== STEP: LOKASI ===== --}}
+    <template x-if="step === 'location'">
         <div class="form-screen animate-slide-right">
-            <div class="form-header">
-                <button @click="step = 'choice'" class="btn-back">
-                    <div class="icon-circle glass">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
-                    </div>
+            {{-- Header compact --}}
+            <div class="form-header-compact">
+                <button @click="step = 'choice'; document.dispatchEvent(new CustomEvent('go-to-choice'))" class="btn-back-compact">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
                     <span>Kembali</span>
                 </button>
-                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator">
-                    Konfirmasi <span x-text="type === 'in' ? 'Masuk' : 'Pulang'"></span>
+                <div class="compact-clock-inline">
+                    <span class="clock-inline-time" id="loc-live-clock">{{ \Carbon\Carbon::now()->format('H:i:s') }}</span>
+                    <span class="clock-inline-separator">·</span>
+                    <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('ddd, D MMM') }}</span>
+                </div>
+                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact">
+                    <span x-text="type === 'in' ? '↙ Masuk' : '↗ Pulang'"></span>
                 </div>
             </div>
 
-            <form action="{{ route('presence.store') }}" method="POST" id="attendance-form" class="main-form-grid">
+            {{-- Instruksi --}}
+            <div class="loc-screen-info glass" style="border-radius:16px; padding:12px 16px; margin-bottom:10px;">
+                <p style="font-size:0.75rem; color:var(--text-secondary); font-weight:700; margin:0;">
+                    📍 Pastikan Anda berada <strong>di dalam area kantor</strong>, lalu tekan "Lanjutkan ke Foto"
+                </p>
+            </div>
+
+            {{-- Map --}}
+            <div class="glass" style="border-radius:20px; overflow:hidden; margin-bottom:10px;">
+                <div id="map" style="width:100%; height:260px; background:#0f172a;"></div>
+            </div>
+
+            {{-- GPS Status + Jarak --}}
+            <div class="gps-strip glass" style="margin-bottom:10px;">
+                <div id="loc-dot" :class="isLocReady ? 'dot-green' : 'dot-orange animate-pulse'"></div>
+                <div style="flex:1; overflow:hidden;">
+                    <span id="loc-text" class="gps-status-text" x-text="locStatusText">Sinkronisasi Satelit...</span>
+                    <div id="loc-distance-display" x-show="locDistance !== null" style="font-size:0.7rem; font-weight:700; margin-top:2px;" :style="isLocReady ? 'color:#10b981' : 'color:#f59e0b'">
+                        <span x-text="isLocReady ? '✅ Sudah dalam jangkauan kantor!' : 'Mendekat ' + locDistance + 'm lagi (maks: {{ $settings['office_radius'] ?? 100 }}m)'"></span>
+                    </div>
+                </div>
+                <button type="button" @click="startTracking()" class="gps-refresh-btn" title="Refresh">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5"/></svg>
+                </button>
+            </div>
+
+            {{-- Progress bar jarak --}}
+            <div id="loc-progress-wrap" x-show="locDistance !== null" style="background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:10px 14px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.65rem; font-weight:700; color:var(--text-tertiary); margin-bottom:6px;">
+                    <span>Jarak ke Kantor</span>
+                    <span x-text="locDistance + 'm'">-</span>
+                </div>
+                <div style="height:6px; background:var(--hover-bg); border-radius:99px; overflow:hidden;">
+                    <div id="loc-progress-bar" 
+                        :style="{ 
+                            width: Math.max(0, Math.min(100, 100 - (locDistance / ({{ $settings['office_radius'] ?? 100 }} * 5) * 100))) + '%',
+                            background: isLocReady ? '#10b981' : (locDistance < {{ ($settings['office_radius'] ?? 100) * 2 }} ? '#f59e0b' : '#ef4444')
+                        }"
+                        style="height:100%; border-radius:99px; transition:width 0.5s, background 0.5s;"></div>
+                </div>
+            </div>
+
+            {{-- Tombol Lanjutkan --}}
+            <button id="btn-go-to-camera" 
+                type="button"
+                @click="proceed()"
+                class="btn-submit-compact"
+                :class="{ 'active': isLocReady }"
+                :style="isLocReady ? '' : 'cursor:not-allowed; opacity:0.6; pointer-events: ' + (isLocReady ? 'auto' : 'none')"
+                style="margin-top:4px;">
+                <span id="btn-go-text" x-text="isLocReady ? '✅ Lanjutkan ke Verifikasi Foto →' : '⏳ Menunggu Lokasi Valid...'">⏳ Menunggu Lokasi Valid...</span>
+            </button>
+        </div>
+    </template>
+
+    <template x-if="step === 'form'">
+        <div class="form-screen animate-slide-right">
+            {{-- Header compact --}}
+            <div class="form-header-compact">
+                <button @click="step = 'choice'; document.dispatchEvent(new CustomEvent('go-to-choice'))" class="btn-back-compact">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
+                    <span>Kembali</span>
+                </button>
+                <div class="compact-clock-inline">
+                    <span id="live-clock" class="clock-inline-time">00:00:00</span>
+                    <span class="clock-inline-separator">·</span>
+                    <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('ddd, D MMM') }}</span>
+                </div>
+                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact">
+                    <span x-text="type === 'in' ? '↙ Masuk' : '↗ Pulang'"></span>
+                </div>
+            </div>
+
+            <form action="{{ route('presence.store') }}" method="POST" id="attendance-form" class="form-compact-grid">
                 @csrf
                 <input type="hidden" name="type" :value="type">
-                
-                <div class="media-column">
-                    <div class="content-card glass">
-                        <div class="card-header">
-                            <h3 class="card-header-title">Verifikasi Biometrik</h3>
-                            <div class="card-actions">
-                                <button type="button" @click="toggleCamera()" class="btn-action">
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5"/></svg>
-                                </button>
-                                <button type="button" id="retake-photo" class="btn-action btn-danger hidden">
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5"/></svg>
-                                </button>
-                            </div>
-                        </div>
 
-                        <div class="camera-viewport">
-                            <video id="webcam" autoplay playsinline class="video-preview"></video>
-                            <canvas id="overlay" class="overlay-canvas"></canvas>
-                            <img id="photo-preview" class="image-preview hidden">
-                            <canvas id="canvas" class="hidden"></canvas>
-
-                            <div id="liveness-instruction" class="liveness-instruction-container hidden">
-                                <div class="instruction-pill">
-                                    <div class="instruction-dot pulse"></div>
-                                    <span id="instruction-text">Mendeteksi Wajah...</span>
-                                </div>
-                                <div class="instruction-steps">
-                                    <div id="step-look" class="step-dot active"></div>
-                                    <div id="step-blink" class="step-dot"></div>
-                                </div>
-                            </div>
-                            
-                            <div id="camera-status" class="overlay-loading">
-                                <div class="spinner"></div>
-                                <p class="loading-text" id="loading-text-content">Inisialisasi Sensor...</p>
-                            </div>
-
-                            <div id="snap-overlay" class="snap-action-wrapper">
-                                <button type="button" id="snap-btn" class="btn-snap">
-                                    <div class="inner-snap-circle"></div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="content-card glass">
-                        <div class="card-header">
-                            <h3 class="card-header-title">Kordinat GPS</h3>
-                            <button type="button" id="refresh-location" class="btn-action">
-                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2.5"/><circle cx="12" cy="11" r="3" stroke-width="2.5"/></svg>
+                {{-- Kamera --}}
+                <div class="cam-card glass">
+                    <div class="cam-card-topbar">
+                        <span class="cam-label">📷 Verifikasi Wajah</span>
+                        <div class="cam-actions">
+                            <button type="button" @click="toggleCamera()" class="btn-cam-action" title="Flip kamera">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5"/></svg>
+                            </button>
+                            <button type="button" id="retake-photo" class="btn-cam-action btn-cam-danger hidden" title="Ulangi foto">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5"/></svg>
                             </button>
                         </div>
-                        <div id="map" class="map-container"></div>
-                        <div class="location-status-bar glass">
-                            <div id="loc-dot" class="dot-orange"></div>
-                            <span id="loc-text" class="status-msg">Sinkronisasi Satelit...</span>
+                    </div>
+                    <div class="camera-viewport-compact">
+                        <video id="webcam" autoplay playsinline class="video-preview"></video>
+                        <canvas id="overlay" class="overlay-canvas"></canvas>
+                        <img id="photo-preview" class="image-preview hidden">
+                        <canvas id="canvas" class="hidden"></canvas>
+
+                        <div id="liveness-instruction" class="liveness-instruction-container hidden">
+                            <div class="instruction-pill">
+                                <div class="instruction-dot pulse"></div>
+                                <span id="instruction-text">Mendeteksi Wajah...</span>
+                            </div>
+                            <div class="instruction-steps">
+                                <div id="step-look" class="step-dot active"></div>
+                                <div id="step-blink" class="step-dot"></div>
+                            </div>
+                        </div>
+
+                        {{-- Overlay loading kamera --}}
+                        <div id="camera-status" class="overlay-loading">
+                            <div class="spinner"></div>
+                            <p class="loading-text" id="loading-text-content">Inisialisasi Sensor...</p>
+                        </div>
+
+                        <div id="snap-overlay" class="snap-action-wrapper-compact">
+                            <button type="button" id="snap-btn" class="btn-snap-compact">
+                                <div class="inner-snap-circle"></div>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="details-column">
-                    <div class="clock-card">
-                        <h2 class="clock-time" id="live-clock">00:00:00</h2>
-                        <p class="clock-date">
-                            {{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY') }}
-                        </p>
+                {{-- Catatan + Submit --}}
+                <div class="bottom-panel glass">
+                    <div class="note-row">
+                        <label class="note-label">📝 Catatan</label>
+                        <textarea name="note" rows="2" class="glass-textarea-compact" placeholder="Keterangan (opsional)..."></textarea>
                     </div>
-
-                    <div class="content-card glass">
-                        <div class="form-fields">
-                            <div class="field-group">
-                                <label class="field-label">Catatan Tugas (Opsional)</label>
-                                <textarea name="note" rows="5" class="glass-textarea" placeholder="Tuliskan keterangan jika ada..."></textarea>
-                            </div>
-                            
-                            <input type="hidden" name="location" id="location-input">
-                            <input type="hidden" name="image" id="image-input">
-                            <input type="hidden" name="is_face_detected" id="face-detected-input" value="false">
-
-                            <button type="submit" id="submit-btn" disabled class="btn-submit">
-                                <span id="submit-text">Ambil Foto Verifikasi</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="policy-card glass-green">
-                        <h4 class="policy-title">
-                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.9L10 1.55l7.834 3.35a1 1 0 01.666.941v6.275c0 3.33-1.842 6.427-4.834 8.16L10 21.45l-3.666-2.174c-2.992-1.733-4.834-4.83-4.834-8.16V5.841a1 1 0 01.666-.941zM10 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd"/></svg>
-                             Secure Access
-                        </h4>
-                        <p class="policy-text text-emerald">Sistem ini memverifikasi lokasi & biometrik secara otomatis untuk keamanan data rumah sakit.</p>
-                    </div>
+                    <input type="hidden" name="location" id="location-input">
+                    <input type="hidden" name="image" id="image-input">
+                    <input type="hidden" name="is_face_detected" id="face-detected-input" value="false">
+                    <button type="submit" id="submit-btn" disabled class="btn-submit-compact">
+                        <span id="submit-text">Ambil Foto Verifikasi</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -348,6 +426,9 @@
         padding: 40px 20px;
         font-family: 'Outfit', sans-serif;
         position: relative;
+    }
+    @media (max-width: 767px) {
+        .presence-container { padding: 16px 10px 80px; }
     }
 
     .choice-screen {
@@ -679,6 +760,247 @@
     .badge-primary { background: var(--brand-blue); }
     .badge-warning { background: var(--brand-orange); }
 
+    /* ====== COMPACT FORM LAYOUT (new mobile-first) ====== */
+
+    /* Header: Kembali | Jam | Badge */
+    .form-header-compact {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: nowrap;
+    }
+    .btn-back-compact {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-weight: 700;
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        white-space: nowrap;
+        backdrop-filter: blur(10px);
+    }
+    .btn-back-compact:hover { color: var(--brand-blue); border-color: var(--brand-blue); }
+    .compact-clock-inline {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        justify-content: center;
+    }
+    .clock-inline-time {
+        font-size: 1.1rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+        color: var(--text-main);
+    }
+    .clock-inline-separator { color: var(--text-tertiary); font-weight: 300; font-size: 1rem; }
+    .clock-inline-date {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        white-space: nowrap;
+    }
+    .type-indicator-compact {
+        padding: 6px 14px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 900;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        white-space: nowrap;
+    }
+
+    /* Grid: single column compact */
+    .form-compact-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Camera Card */
+    .cam-card {
+        border-radius: 24px;
+        overflow: hidden;
+    }
+    .cam-card-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px 8px;
+    }
+    .cam-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+    }
+    .cam-actions { display: flex; gap: 8px; }
+    .btn-cam-action {
+        width: 34px; height: 34px;
+        border-radius: 10px;
+        background: var(--hover-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-tertiary);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-cam-action:hover { background: var(--glass-bg); color: var(--text-main); border-color: var(--brand-blue); }
+    .btn-cam-danger:hover { background: #ef4444; color: white; border-color: #ef4444; }
+
+    /* Camera viewport compact */
+    .camera-viewport-compact {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4/3;
+        background: #000;
+        overflow: hidden;
+    }
+    @media (min-width: 768px) {
+        .camera-viewport-compact { aspect-ratio: 16/9; max-height: 400px; }
+    }
+
+    /* Snap button compact */
+    .snap-action-wrapper-compact {
+        position: absolute; bottom: 16px; left: 0; right: 0;
+        display: flex; justify-content: center; z-index: 5;
+    }
+    .btn-snap-compact {
+        width: 66px; height: 66px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.12);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.25);
+        padding: 6px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .btn-snap-compact:active { transform: scale(0.88); }
+    .btn-snap-compact .inner-snap-circle {
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        background: var(--brand-blue);
+        border: 5px solid #fff;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+    }
+
+    /* GPS Strip */
+    .gps-strip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 16px;
+    }
+    .gps-refresh-btn {
+        width: 30px; height: 30px; min-width: 30px;
+        border-radius: 8px;
+        background: var(--hover-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-tertiary);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+    }
+    .gps-status-text {
+        flex: 1;
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .gps-map-toggle {
+        width: 30px; height: 30px; min-width: 30px;
+        border-radius: 8px;
+        background: var(--hover-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-tertiary);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .gps-map-toggle:hover { color: var(--brand-blue); border-color: var(--brand-blue); }
+
+    /* Map panel collapsible */
+    .map-panel-compact {
+        border-radius: 18px;
+        overflow: hidden;
+        padding: 0;
+    }
+    .map-container-compact {
+        width: 100%;
+        height: 200px;
+        background: #000;
+    }
+
+    /* Bottom panel: catatan + submit */
+    .bottom-panel {
+        border-radius: 24px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .note-row { display: flex; flex-direction: column; gap: 6px; }
+    .note-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .glass-textarea-compact {
+        width: 100%;
+        background: var(--hover-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        padding: 10px 14px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 0.875rem;
+        outline: none;
+        resize: none;
+        transition: border-color 0.3s;
+    }
+    .glass-textarea-compact::placeholder { color: var(--text-tertiary); }
+    .glass-textarea-compact:focus { border-color: var(--brand-blue); background: var(--glass-bg); }
+
+    .btn-submit-compact {
+        width: 100%;
+        padding: 15px;
+        border-radius: 16px;
+        background: var(--hover-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-tertiary);
+        font-size: 0.7rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        cursor: not-allowed;
+        transition: all 0.4s;
+    }
+    .btn-submit-compact.active {
+        background: var(--brand-blue);
+        border-color: var(--brand-blue);
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+    }
+    /* ====== END COMPACT FORM ====== */
+
     .main-form-grid {
         display: grid;
         grid-template-columns: 1.4fr 1fr;
@@ -698,11 +1020,12 @@
 
         /* Order: 1. Jam, 2. Foto, 3. GPS, 4. Catatan */
         .clock-card { order: 1; }
-        .media-column > .content-card:first-child { order: 2; } /* Camera card is first child of media-column */
-        .media-column > .content-card:last-child { order: 3; } /* GPS card is last child of media-column */
-        .details-column > .content-card { order: 4; } /* Form fields */
+        .media-column > .content-card:first-child { order: 2; }
+        .media-column > .content-card:last-child { order: 3; }
+        .details-column > .content-card { order: 4; }
         .policy-card { order: 5; }
     }
+
 
     .content-card {
         border-radius: 40px;
@@ -766,7 +1089,14 @@
     @media (min-width: 1024px) {
         .camera-viewport { aspect-ratio: 4/3; }
     }
-    .video-preview, .image-preview { 
+    .video-preview { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+    }
+    .image-preview { 
         width: 100%; 
         height: 100%; 
         object-fit: cover; 
@@ -1277,7 +1607,7 @@
 <script>
     const OFFICE_LOCATION = "{{ $settings['office_location'] ?? '' }}";
     const OFFICE_RADIUS = {{ $settings['office_radius'] ?? 500 }};
-    let isLocationInRange = false;
+    let isLocationInRange = null;
 
     let currentStream = null;
     let map = null, marker = null;
@@ -1336,9 +1666,12 @@
                  });
             }
 
-            currentStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 640 }, height: { ideal: 480 } }
-            });
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const videoConstraints = isIOS
+                ? { facingMode: useFrontCamera ? "user" : "environment" }
+                : { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 640 }, height: { ideal: 480 } };
+            
+            currentStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
             webcam.srcObject = currentStream;
             
             webcam.onloadedmetadata = () => {
@@ -1529,90 +1862,105 @@
         return R * c;
     }
 
-    window.getLocation = () => {
-        const dot = document.getElementById('loc-dot');
-        const text = document.getElementById('loc-text');
-        if(!dot) return;
+    let locationWatcherId = null;
+    let cameraStarted = false;
 
-        dot.className = 'dot-orange animate-pulse';
-        text.textContent = "Sinkronisasi Satelit...";
+    // Helper: update tampilan map dari posisi baru
+    function updateMapPosition(latitude, longitude) {
+        if (!map) {
+            map = L.map('map', { zoomControl: false }).setView([latitude, longitude], 17);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            marker = L.marker([latitude, longitude]).addTo(map);
+            if (OFFICE_LOCATION) {
+                const parts = OFFICE_LOCATION.split(',').map(n => parseFloat(n.trim()));
+                if (parts.length === 2 && !isNaN(parts[0])) {
+                    L.circle(parts, {
+                        color: '#3b82f6', fillColor: '#3b82f6',
+                        fillOpacity: 0.15, radius: OFFICE_RADIUS
+                    }).addTo(map);
+                }
+            }
+            setTimeout(() => map.invalidateSize(), 500);
+        } else {
+            map.setView([latitude, longitude], map.getZoom());
+            marker.setLatLng([latitude, longitude]);
+        }
+    }
 
-        navigator.geolocation.getCurrentPosition(pos => {
-            const { latitude, longitude, accuracy } = pos.coords;
-            document.getElementById('location-input').value = `${latitude}, ${longitude}`;
-            
-            let distance = 0;
-            let statusText = "";
-            let inRange = false;
-            
-            if(OFFICE_LOCATION) {
+    // ====== 2-STEP FLOW: LOKASI → FOTO ======
+
+    // Step 1: Tampilkan peta + tracking live → aktifkan tombol saat in range
+    window.startLocationTracking = () => {
+        if (!navigator.geolocation) {
+            if (window.presenceApp) window.presenceApp.locStatusText = 'GPS tidak tersedia';
+            return;
+        }
+
+        if (locationWatcherId !== null) {
+            navigator.geolocation.clearWatch(locationWatcherId);
+            locationWatcherId = null;
+        }
+
+        locationWatcherId = navigator.geolocation.watchPosition(pos => {
+            const { latitude, longitude } = pos.coords;
+            window._lastLat = latitude;
+            window._lastLng = longitude;
+
+            // Update peta
+            updateMapPosition(latitude, longitude);
+
+            // Hitung jarak & status
+            let inRange = false, statusText = '', distance = 0;
+            if (OFFICE_LOCATION) {
                 try {
                     const parts = OFFICE_LOCATION.split(',').map(n => parseFloat(n.trim()));
-                    const offLat = parts[0];
-                    const offLng = parts[1];
-                    
-                    if(!isNaN(offLat) && !isNaN(offLng)) {
+                    const offLat = parts[0], offLng = parts[1];
+                    if (!isNaN(offLat) && !isNaN(offLng)) {
                         distance = calculateDistance(latitude, longitude, offLat, offLng);
-                        
-                        if(distance <= OFFICE_RADIUS) {
-                            inRange = true;
-                            statusText = `DALAM JANGKAUAN (${distance.toFixed(0)}m)`;
-                        } else {
-                            inRange = false;
-                            statusText = `DI LUAR JANGKAUAN (${distance.toFixed(0)}m)`;
-                        }
+                        inRange  = distance <= OFFICE_RADIUS;
+                        statusText = inRange
+                            ? `✅ Dalam area kantor (${distance.toFixed(0)}m)`
+                            : `📍 ${distance.toFixed(0)}m dari kantor`;
                     } else {
-                        inRange = true; 
-                        statusText = "LOKASI KANTOR BELUM DISET";
+                        inRange = true; statusText = 'Lokasi kantor belum diset';
                     }
-                } catch(e) {
-                    console.error(e);
-                    inRange = true; 
-                    statusText = "ERROR KONFIGURASI LOKASI";
-                }
+                } catch(e) { inRange = true; statusText = 'Skip (error config)'; }
             } else {
-                inRange = true;
-                statusText = "SKIP LOKASI (DEV MOOE)";
+                inRange = true; statusText = 'Mode dev — lokasi dilewati';
             }
-            
-            isLocationInRange = inRange;
-            text.textContent = statusText;
 
-            if(inRange) {
-                dot.className = 'dot-green';
-            } else {
-                dot.className = 'dot-red animate-pulse';
+            // Sync ke Alpine (SINGLE SOURCE OF TRUTH)
+            if (window.presenceApp) {
+                window.presenceApp.isLocReady = inRange;
+                window.presenceApp.locStatusText = statusText;
+                window.presenceApp.locDistance = distance >= 0 ? Math.round(distance) : null;
             }
-            
-            if(!map) {
-                map = L.map('map', { zoomControl: false }).setView([latitude, longitude], 17);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                marker = L.marker([latitude, longitude]).addTo(map);
-                
-                if(OFFICE_LOCATION) {
-                     const parts = OFFICE_LOCATION.split(',').map(n => parseFloat(n.trim()));
-                     if(parts.length === 2 && !isNaN(parts[0])) {
-                         L.circle(parts, {
-                            color: '#3b82f6',
-                            fillColor: '#3b82f6',
-                            fillOpacity: 0.1,
-                            radius: OFFICE_RADIUS
-                        }).addTo(map);
-                     }
-                }
 
-                setTimeout(() => map.invalidateSize(), 800);
-            } else {
-                map.setView([latitude, longitude]);
-                marker.setLatLng([latitude, longitude]);
-                map.invalidateSize();
-            }
         }, err => {
-            text.textContent = "GPS GAGAL: " + err.message;
-            dot.className = 'dot-orange';
-            isLocationInRange = false;
-        }, { enableHighAccuracy: true });
+            if (window.presenceApp) {
+                window.presenceApp.locStatusText = 'GPS Gagal: ' + err.message;
+                window.presenceApp.isLocReady = true; // Izinkan lanjut sebagai fallback
+            }
+        }, {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 20000
+        });
     };
+
+    // Stop location watcher (dipanggil saat ke step foto)
+    window.stopLocationTracking = () => {
+        if (locationWatcherId !== null) {
+            navigator.geolocation.clearWatch(locationWatcherId);
+            locationWatcherId = null;
+        }
+        const locInput = document.getElementById('location-input');
+        if (locInput && window._lastLat !== undefined) {
+            locInput.value = `${window._lastLat}, ${window._lastLng}`;
+        }
+    };
+
+
 
     document.addEventListener('click', (e) => {
         const snapBtn = e.target.closest('#snap-btn');
@@ -1630,19 +1978,6 @@
                 return;
             }
 
-        
-            const locText = document.getElementById('loc-text').textContent;
-            
-            if (!isLocationInRange) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lokasi Tidak Valid',
-                    text: 'Anda berada di luar jangkauan kantor! ' + locText,
-                    confirmButtonColor: '#ef4444'
-                });
-                return;
-            }
-            
             const webcam = document.getElementById('webcam');
             const canvas = document.getElementById('canvas');
             const preview = document.getElementById('photo-preview');
@@ -1651,12 +1986,14 @@
             const submitBtn = document.getElementById('submit-btn');
             const imageInput = document.getElementById('image-input');
 
-            canvas.width = webcam.videoWidth;
-            canvas.height = webcam.videoHeight;
+            canvas.width = webcam.videoWidth || webcam.offsetWidth;
+            canvas.height = webcam.videoHeight || webcam.offsetHeight;
             const ctx = canvas.getContext('2d');
             
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
+            if (useFrontCamera) {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
             
             ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
             
@@ -1676,6 +2013,7 @@
             imageInput.value = data;
             
             submitBtn.disabled = false;
+            submitBtn.classList.add('active');
             document.getElementById('submit-text').textContent = 'Kirim Presensi Sekarang';
         }
 
@@ -1695,22 +2033,83 @@
             
             if(typeof startFaceDetection === 'function') startFaceDetection();
             
-            document.getElementById('submit-btn').disabled = true;
+            const sb = document.getElementById('submit-btn');
+            if(sb) { sb.disabled = true; sb.classList.remove('active'); }
             document.getElementById('submit-text').textContent = 'Ambil Foto Verifikasi';
         }
 
         if(e.target.closest('#refresh-location')) {
-            if(typeof getLocation === 'function') getLocation();
+            // Di step lokasi: restart tracking; di step lain: tidak ada
+            if(typeof startLocationTracking === 'function') startLocationTracking();
         }
     });
 
-    setInterval(() => {
-        const el = document.getElementById('live-clock');
-        if(el) {
-            const now = new Date();
-            el.textContent = now.toLocaleTimeString('en-GB');
+    // go-to-form event (fallback jika Alpine access via _x_dataStack gagal)
+    document.addEventListener('go-to-form', () => {
+        const presenceContainer = document.querySelector('[x-data]');
+        if (presenceContainer && presenceContainer._x_dataStack) {
+            const alpineData = presenceContainer._x_dataStack[0];
+            if (alpineData) {
+                alpineData.step = 'form';
+                setTimeout(() => window.startCamera(), 150);
+            }
         }
+    });
+
+    // Toggle map panel collapsible
+    window.toggleMapPanel = () => {
+        const panel = document.getElementById('map-panel');
+        if (!panel) return;
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible && map) {
+            setTimeout(() => map.invalidateSize(), 100);
+        }
+    };
+
+
+    setInterval(() => {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-GB');
+        const el = document.getElementById('live-clock');
+        if(el) el.textContent = timeStr;
+        const el2 = document.getElementById('loc-live-clock');
+        if(el2) el2.textContent = timeStr;
     }, 1000);
+
+
+    // Event: kembali ke layar pilihan (tombol Kembali / user navigasi keluar form)
+    document.addEventListener('go-to-choice', () => {
+        // Stop real-time location watcher
+        if (locationWatcherId !== null) {
+            navigator.geolocation.clearWatch(locationWatcherId);
+            locationWatcherId = null;
+        }
+        cameraStarted = false;
+
+        if (currentStream) {
+            currentStream.getTracks().forEach(t => t.stop());
+            currentStream = null;
+        }
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+            detectionInterval = null;
+        }
+        // Reset peta agar bisa re-init saat buka lagi
+        map = null;
+        marker = null;
+        isLocationInRange = null;
+
+        // Alpine: kembali ke step choice + reset isLocReady
+        if (window.presenceApp) {
+            window.presenceApp.step = 'choice';
+            window.presenceApp.isLocReady = false;
+        } else {
+            window.dispatchEvent(new CustomEvent('alpine:go-choice'));
+        }
+    });
+
+
 </script>
 @endpush
 @endsection

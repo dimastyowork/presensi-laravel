@@ -22,6 +22,11 @@ Route::get('/persetujuan-dan-kebijakan', function () {
     return view('pages.legal.terms');
 })->name('legal.terms');
 
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web');
+
+
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/ganti-password', [PasswordController::class, 'changePassword'])->name('password.change');

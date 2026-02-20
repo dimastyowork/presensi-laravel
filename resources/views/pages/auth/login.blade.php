@@ -16,8 +16,9 @@
                             </p>
                         </div>
                         
-                        <form method="POST" action="{{ route('login') }}">
+                        <form method="POST" action="{{ route('login') }}" id="login-form">
                             @csrf
+                            <meta name="csrf-token" content="{{ csrf_token() }}">
                             <div class="space-y-6">
                                 <div>
                                     <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-400">
@@ -110,3 +111,33 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = this;
+        
+        try {
+            const res = await fetch('/csrf-token', { 
+                method: 'GET', 
+                headers: { 'Accept': 'application/json' } 
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                if (data.token) {
+                    form.querySelectorAll('input[name="_token"]').forEach(el => {
+                        el.value = data.token;
+                    });
+                    document.querySelector('meta[name="csrf-token"]').setAttribute('content', data.token);
+                }
+            }
+        } catch (err) {
+            console.warn('CSRF refresh gagal, submit dengan token lama:', err);
+        }
+        
+        form.submit();
+    });
+</script>
+@endpush

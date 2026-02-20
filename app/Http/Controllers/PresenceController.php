@@ -28,6 +28,7 @@ class PresenceController extends Controller
         $now = Carbon::now();
         $today = Carbon::today();
         
+        // Cari presence yang masih open (belum absen pulang)
         $presence = Presence::where('user_id', $userId)
             ->whereNull('time_out')
             ->orderBy('date', 'desc')
@@ -120,6 +121,7 @@ class PresenceController extends Controller
 
         $selectedType = $request->query('type');
         
+        // Cek apakah presence yang open sudah stale (window absen pulang habis)
         $isStaleOut = false;
         if ($presence && !$presence->time_out) {
             $shift = Shift::where('name', $presence->shift_name)->first();
@@ -133,7 +135,40 @@ class PresenceController extends Controller
             }
         }
 
-        return view('pages.presensi', compact('presence', 'selectedType', 'isWorkingDay', 'dayName', 'activeShiftInfo', 'settings', 'isShiftSelected', 'isStaleOut'));
+        // Cari presence HARI INI (logical date) untuk menentukan hasIn/hasOut
+        // Jika presence lama sudah stale, jangan blokir absen masuk hari ini
+        $logicalDateStr = $activeShiftInfo['logical_date']->toDateString();
+        $shiftNameForToday = $activeShiftInfo['shift_name'];
+
+        $todayPresence = null;
+        if ($shiftNameForToday) {
+            $todayPresence = Presence::where('user_id', $userId)
+                ->where('date', $logicalDateStr)
+                ->where('shift_name', $shiftNameForToday)
+                ->first();
+        }
+
+        // Cek apakah today's presence window absen pulang sudah habis
+        $isTodayStaleOut = false;
+        if ($todayPresence && !$todayPresence->time_out) {
+            $shiftForToday = Shift::where('name', $todayPresence->shift_name)->first();
+            if ($shiftForToday) {
+                $todayShiftEnd = Carbon::parse($todayPresence->date . ' ' . $shiftForToday->end_time);
+                $todayShiftStart = Carbon::parse($todayPresence->date . ' ' . $shiftForToday->start_time);
+                if ($todayShiftEnd->lt($todayShiftStart)) $todayShiftEnd->addDay();
+                $isTodayStaleOut = $now->gt((clone $todayShiftEnd)->addHours(8));
+            }
+        }
+
+        // presence untuk display summary (bisa dari hari ini atau kemarin jika stale)
+        $presenceForDisplay = $todayPresence ?? $presence;
+
+        return view('pages.presensi', compact(
+            'presenceForDisplay', 'selectedType', 'isWorkingDay', 'dayName',
+            'activeShiftInfo', 'settings', 'isShiftSelected',
+            'todayPresence', 'isTodayStaleOut'
+        ));
+
     }
 
     public function updateShift(Request $request)
