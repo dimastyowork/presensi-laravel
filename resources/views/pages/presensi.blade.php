@@ -862,7 +862,7 @@ class="presence-container">
     .camera-viewport-compact {
         position: relative;
         width: 100%;
-        aspect-ratio: 4/3;
+        aspect-ratio: 3/4;
         background: #000;
         overflow: hidden;
     }
@@ -1669,7 +1669,7 @@ class="presence-container">
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const videoConstraints = isIOS
                 ? { facingMode: useFrontCamera ? "user" : "environment" }
-                : { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 640 }, height: { ideal: 480 } };
+                : { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 480 }, height: { ideal: 640 } };
             
             currentStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
             webcam.srcObject = currentStream;
