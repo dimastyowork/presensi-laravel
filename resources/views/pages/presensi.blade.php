@@ -7,6 +7,7 @@
     type: 'in',
     isLocReady: false,
     locStatusText: 'Mendeteksi GPS...',
+    locStatusType: 'loading', // 'loading', 'success', 'warning'
     locDistance: null,
     hasIn: {{ ($todayPresence && $todayPresence->time_in) ? 'true' : 'false' }},
     hasOut: {{ ($todayPresence && $todayPresence->time_out) ? 'true' : 'false' }},
@@ -18,6 +19,7 @@
     async startTracking() {
         this.isLocReady = false;
         this.locStatusText = 'Mendeteksi GPS...';
+        this.locStatusType = 'loading';
         this.locDistance = null;
         
         if (typeof window.startLocationTracking === 'function') {
@@ -237,15 +239,22 @@ class="presence-container">
                     <span class="clock-inline-separator">·</span>
                     <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('ddd, D MMM') }}</span>
                 </div>
-                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact">
-                    <span x-text="type === 'in' ? '↙ Masuk' : '↗ Pulang'"></span>
+                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact flex items-center gap-1.5">
+                    <template x-if="type === 'in'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </template>
+                    <template x-if="type === 'out'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </template>
+                    <span x-text="type === 'in' ? 'Masuk' : 'Pulang'"></span>
                 </div>
             </div>
 
             {{-- Instruksi --}}
             <div class="loc-screen-info glass" style="border-radius:16px; padding:12px 16px; margin-bottom:10px;">
-                <p style="font-size:0.75rem; color:var(--text-secondary); font-weight:700; margin:0;">
-                    📍 Pastikan Anda berada <strong>di dalam area kantor</strong>, lalu tekan "Lanjutkan ke Foto"
+                <p class="flex items-center gap-2" style="font-size:0.75rem; color:var(--text-secondary); font-weight:700; margin:0;">
+                    <svg class="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/></svg>
+                    <span>Pastikan Anda berada <strong>di dalam area kantor</strong>, lalu tekan "Lanjutkan ke Foto"</span>
                 </p>
             </div>
 
@@ -257,10 +266,21 @@ class="presence-container">
             {{-- GPS Status + Jarak --}}
             <div class="gps-strip glass" style="margin-bottom:10px;">
                 <div id="loc-dot" :class="isLocReady ? 'dot-green' : 'dot-orange animate-pulse'"></div>
-                <div style="flex:1; overflow:hidden;">
-                    <span id="loc-text" class="gps-status-text" x-text="locStatusText">Sinkronisasi Satelit...</span>
-                    <div id="loc-distance-display" x-show="locDistance !== null" style="font-size:0.7rem; font-weight:700; margin-top:2px;" :style="isLocReady ? 'color:#10b981' : 'color:#f59e0b'">
-                        <span x-text="isLocReady ? '✅ Sudah dalam jangkauan kantor!' : 'Mendekat ' + locDistance + 'm lagi (maks: {{ $settings['office_radius'] ?? 100 }}m)'"></span>
+                <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; gap:1px;">
+                    <div class="flex items-center gap-2">
+                        <template x-if="locStatusType === 'loading'">
+                            <svg class="w-3.5 h-3.5 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </template>
+                        <template x-if="locStatusType === 'success'">
+                            <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5"/></svg>
+                        </template>
+                        <template x-if="locStatusType === 'warning'">
+                            <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2.5"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2.5"/></svg>
+                        </template>
+                        <span id="loc-text" class="gps-status-text" x-text="locStatusText">Sinkronisasi Satelit...</span>
+                    </div>
+                    <div id="loc-distance-display" x-show="locDistance !== null" style="font-size:0.7rem; font-weight:700; margin-left: 22px;" :style="isLocReady ? 'color:#10b981' : 'color:#f59e0b'">
+                        <span x-text="isLocReady ? 'Sudah dalam jangkauan kantor!' : 'Mendekat ' + locDistance + 'm lagi (maks: {{ $settings['office_radius'] ?? 100 }}m)'"></span>
                     </div>
                 </div>
                 <button type="button" @click="startTracking()" class="gps-refresh-btn" title="Refresh">
@@ -292,7 +312,18 @@ class="presence-container">
                 :class="{ 'active': isLocReady }"
                 :style="isLocReady ? '' : 'cursor:not-allowed; opacity:0.6; pointer-events: ' + (isLocReady ? 'auto' : 'none')"
                 style="margin-top:4px;">
-                <span id="btn-go-text" x-text="isLocReady ? '✅ Lanjutkan ke Verifikasi Foto →' : '⏳ Menunggu Lokasi Valid...'">⏳ Menunggu Lokasi Valid...</span>
+                <div class="flex items-center justify-center gap-2">
+                    <template x-if="isLocReady">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5"/></svg>
+                    </template>
+                    <template x-if="!isLocReady">
+                        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </template>
+                    <span id="btn-go-text" x-text="isLocReady ? 'Lanjutkan ke Verifikasi Foto' : 'Menunggu Lokasi Valid...'">Menunggu Lokasi Valid...</span>
+                    <template x-if="isLocReady">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="3"/></svg>
+                    </template>
+                </div>
             </button>
         </div>
     </template>
@@ -310,8 +341,14 @@ class="presence-container">
                     <span class="clock-inline-separator">·</span>
                     <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('ddd, D MMM') }}</span>
                 </div>
-                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact">
-                    <span x-text="type === 'in' ? '↙ Masuk' : '↗ Pulang'"></span>
+                <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact flex items-center gap-1.5">
+                    <template x-if="type === 'in'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </template>
+                    <template x-if="type === 'out'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </template>
+                    <span x-text="type === 'in' ? 'Masuk' : 'Pulang'"></span>
                 </div>
             </div>
 
@@ -322,7 +359,10 @@ class="presence-container">
                 {{-- Kamera --}}
                 <div class="cam-card glass">
                     <div class="cam-card-topbar">
-                        <span class="cam-label">📷 Verifikasi Wajah</span>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-width="2"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/></svg>
+                            <span class="cam-label">Verifikasi Wajah</span>
+                        </div>
                         <div class="cam-actions">
                             <button type="button" @click="toggleCamera()" class="btn-cam-action" title="Flip kamera">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5"/></svg>
@@ -366,7 +406,10 @@ class="presence-container">
                 {{-- Catatan + Submit --}}
                 <div class="bottom-panel glass">
                     <div class="note-row">
-                        <label class="note-label">📝 Catatan</label>
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2"/></svg>
+                            <label class="note-label">Catatan</label>
+                        </div>
                         <textarea name="note" rows="2" class="glass-textarea-compact" placeholder="Keterangan (opsional)..."></textarea>
                     </div>
                     <input type="hidden" name="location" id="location-input">
@@ -1918,7 +1961,7 @@ class="presence-container">
             updateMapPosition(latitude, longitude);
 
             // Hitung jarak & status
-            let inRange = false, statusText = '', distance = 0;
+            let inRange = false, statusText = '', distance = 0, statusType = 'warning';
             if (OFFICE_LOCATION) {
                 try {
                     const parts = OFFICE_LOCATION.split(',').map(n => parseFloat(n.trim()));
@@ -1926,21 +1969,23 @@ class="presence-container">
                     if (!isNaN(offLat) && !isNaN(offLng)) {
                         distance = calculateDistance(latitude, longitude, offLat, offLng);
                         inRange  = distance <= OFFICE_RADIUS;
+                        statusType = inRange ? 'success' : 'warning';
                         statusText = inRange
-                            ? `✅ Dalam area kantor (${distance.toFixed(0)}m)`
-                            : `📍 ${distance.toFixed(0)}m dari kantor`;
+                            ? `Dalam area kantor (${distance.toFixed(0)}m)`
+                            : `${distance.toFixed(0)}m dari kantor`;
                     } else {
-                        inRange = true; statusText = 'Lokasi kantor belum diset';
+                        inRange = true; statusType = 'success'; statusText = 'Lokasi kantor belum diset';
                     }
-                } catch(e) { inRange = true; statusText = 'Skip (error config)'; }
+                } catch(e) { inRange = true; statusType = 'success'; statusText = 'Skip (error config)'; }
             } else {
-                inRange = true; statusText = 'Mode dev — lokasi dilewati';
+                inRange = true; statusType = 'success'; statusText = 'Mode dev — lokasi dilewati';
             }
 
             // Sync ke Alpine (SINGLE SOURCE OF TRUTH)
             if (window.presenceApp) {
                 window.presenceApp.isLocReady = inRange;
                 window.presenceApp.locStatusText = statusText;
+                window.presenceApp.locStatusType = statusType;
                 window.presenceApp.locDistance = distance >= 0 ? Math.round(distance) : null;
             }
 
