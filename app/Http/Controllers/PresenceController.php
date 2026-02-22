@@ -21,9 +21,11 @@ class PresenceController extends Controller
     public function __construct(SsoApiService $ssoService)
     {
         $this->ssoService = $ssoService;
+        Carbon::setLocale('id');
     }
     public function index(Request $request)
     {
+        Carbon::setLocale('id');
         $userId = Auth::id(); 
         $now = Carbon::now();
         $today = Carbon::today();
@@ -178,6 +180,7 @@ class PresenceController extends Controller
 
     public function store(Request $request)
     {
+        Carbon::setLocale('id');
         $userId = Auth::id();
         $now = Carbon::now();
         $type = $request->input('type', 'in');
@@ -377,6 +380,7 @@ class PresenceController extends Controller
 
     public function history()
     {
+        Carbon::setLocale('id');
         $userId = Auth::id();
         
         $presences = Presence::where('user_id', $userId)

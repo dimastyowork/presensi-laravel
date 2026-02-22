@@ -2,6 +2,7 @@
 @section('title', 'Presensi')
 
 @section('content')
+@php \Carbon\Carbon::setLocale('id'); @endphp
 <div x-data="{ 
     step: 'choice', 
     type: 'in',
@@ -237,7 +238,7 @@ class="presence-container">
                 <div class="compact-clock-inline">
                     <span class="clock-inline-time" id="loc-live-clock">{{ \Carbon\Carbon::now()->format('H:i:s') }}</span>
                     <span class="clock-inline-separator">·</span>
-                    <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('ddd, D MMM') }}</span>
+                    <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMM') }}</span>
                 </div>
                 <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact flex items-center gap-1.5">
                     <template x-if="type === 'in'">
@@ -339,7 +340,7 @@ class="presence-container">
                 <div class="compact-clock-inline">
                     <span id="live-clock" class="clock-inline-time">00:00:00</span>
                     <span class="clock-inline-separator">·</span>
-                    <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('ddd, D MMM') }}</span>
+                    <span class="clock-inline-date">{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMM') }}</span>
                 </div>
                 <div :class="type === 'in' ? 'badge-primary' : 'badge-warning'" class="type-indicator-compact flex items-center gap-1.5">
                     <template x-if="type === 'in'">
