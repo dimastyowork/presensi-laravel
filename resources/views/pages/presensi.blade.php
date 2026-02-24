@@ -596,18 +596,22 @@ class="presence-container">
     .presence-card {
         background: var(--glass-bg);
         border: 2px solid var(--glass-border);
-        border-radius: 40px;
-        padding: 50px 30px;
+        border-radius: 32px;
+        padding: 40px 24px;
         text-align: center;
         position: relative;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
         backdrop-filter: blur(15px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
     
     .dark .presence-card {
         background: rgba(30, 41, 59, 0.5);
-        border-color: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
     .card-entry:hover {
@@ -638,13 +642,13 @@ class="presence-container">
     }
 
     .card-icon-wrapper {
-        width: 90px;
-        height: 90px;
-        border-radius: 30px;
+        width: 70px;
+        height: 70px;
+        border-radius: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 30px;
+        margin-bottom: 24px;
         color: white;
         transition: transform 0.3s;
     }
@@ -659,10 +663,10 @@ class="presence-container">
     .presence-card:hover .card-icon-wrapper { transform: scale(1.1); }
 
     .card-title { 
-        font-size: 1.8rem; 
+        font-size: 1.5rem; 
         font-weight: 800; 
         color: var(--text-main); 
-        margin-bottom: 10px; 
+        margin-bottom: 8px; 
     }
     .card-status { 
         font-size: 0.9rem; 
@@ -811,27 +815,28 @@ class="presence-container">
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 14px;
+        gap: 8px;
+        margin-bottom: 16px;
         flex-wrap: nowrap;
+        width: 100%;
     }
     .btn-back-compact {
         display: flex;
         align-items: center;
         gap: 4px;
-        background: none;
-        border: none;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
         cursor: pointer;
         color: var(--text-secondary);
         font-weight: 700;
-        font-size: 0.75rem;
-        padding: 6px 8px;
+        font-size: 0.7rem;
+        padding: 8px 10px;
         border-radius: 12px;
-        border: 1px solid var(--glass-border);
-        background: var(--glass-bg);
         white-space: nowrap;
         backdrop-filter: blur(10px);
+        transition: all 0.2s;
     }
+    .btn-back-compact:active { transform: scale(0.95); }
     .btn-back-compact:hover { color: var(--brand-blue); border-color: var(--brand-blue); }
     .compact-clock-inline {
         display: flex;
@@ -841,18 +846,18 @@ class="presence-container">
         justify-content: center;
     }
     .clock-inline-time {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 900;
         letter-spacing: -0.5px;
         color: var(--text-main);
     }
-    .clock-inline-separator { color: var(--text-tertiary); font-weight: 300; font-size: 0.9rem; margin: 0 2px; }
+    .clock-inline-separator { color: var(--text-tertiary); font-weight: 300; font-size: 0.8rem; margin: 0 1px; }
     .clock-inline-date {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 700;
         color: var(--text-tertiary);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.2px;
         white-space: nowrap;
     }
     .type-indicator-compact {
@@ -1949,6 +1954,7 @@ class="presence-container">
 
     // Step 1: Tampilkan peta + tracking live → aktifkan tombol saat in range
     window.startLocationTracking = () => {
+        window._hasShownLocWarning = false;
         if (!navigator.geolocation) {
             if (window.presenceApp) {
                 window.presenceApp.locStatusText = 'GPS tidak tersedia di browser ini';
@@ -1979,10 +1985,8 @@ class="presence-container">
             window._lastLat = latitude;
             window._lastLng = longitude;
 
-            // Update peta
             updateMapPosition(latitude, longitude);
 
-            // Hitung jarak & status
             let inRange = false, statusText = '', distance = 0, statusType = 'warning';
             if (OFFICE_LOCATION) {
                 try {
@@ -1990,11 +1994,31 @@ class="presence-container">
                     const offLat = parts[0], offLng = parts[1];
                     if (!isNaN(offLat) && !isNaN(offLng)) {
                         distance = calculateDistance(latitude, longitude, offLat, offLng);
-                        inRange  = distance <= OFFICE_RADIUS;
-                        statusType = inRange ? 'success' : 'warning';
-                        statusText = inRange
-                            ? `Dalam area kantor (${distance.toFixed(0)}m)`
-                            : `${distance.toFixed(0)}m dari kantor`;
+                        
+                        if (distance > 1000000) { 
+                            inRange = false;
+                            statusType = 'warning';
+                            statusText = 'Lokasi Tidak Akurat Pastikan GPS Aktif';
+                            
+                            if (!window._hasShownLocWarning) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Lokasi Tidak Akurat',
+                                    html: 'GPS terdeteksi jauh.<br><br>' +
+                                          '1. Pastikan GPS aktif.<br>' +
+                                          '2. Gunakan Browser Chrome/Safari.<br>' +
+                                          '3. Hindari dalam ruangan beton tebal.',
+                                    confirmButtonColor: '#3b82f6'
+                                });
+                                window._hasShownLocWarning = true;
+                            }
+                        } else {
+                            inRange  = distance <= OFFICE_RADIUS;
+                            statusType = inRange ? 'success' : 'warning';
+                            statusText = inRange
+                                ? `Dalam area kantor (${distance.toFixed(0)}m)`
+                                : `${distance.toFixed(0)}m dari kantor`;
+                        }
                     } else {
                         inRange = true; statusType = 'success'; statusText = 'Lokasi kantor belum diset';
                     }
@@ -2003,7 +2027,6 @@ class="presence-container">
                 inRange = true; statusType = 'success'; statusText = 'Mode dev — lokasi dilewati';
             }
 
-            // Sync ke Alpine (SINGLE SOURCE OF TRUTH)
             if (window.presenceApp) {
                 window.presenceApp.isLocReady = inRange;
                 window.presenceApp.locStatusText = statusText;
@@ -2014,20 +2037,17 @@ class="presence-container">
         }, err => {
             if (window.presenceApp) {
                 let msg = 'GPS Gagal: ' + err.message;
-                if (err.code === 1) { // PERMISSION_DENIED
+                if (err.code === 1) {
                     msg = 'Akses Lokasi Ditolak. Harap izinkan GPS di browser/setelan HP Anda.';
-                } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                } else if (err.code === 2) {
                     msg = 'Lokasi tidak ditemukan. Pastikan GPS aktif dan sinyal kuat.';
-                } else if (err.code === 3) { // TIMEOUT
+                } else if (err.code === 3) {
                     msg = 'Waktu deteksi GPS habis. Silakan coba lagi.';
                 }
                 
                 window.presenceApp.locStatusText = msg;
                 window.presenceApp.locStatusType = 'warning';
                 
-                // Jika dev/debug mode mungkin ingin izinkan lanjut, 
-                // tapi secara default untuk keamanan biasanya tetap dilarang di production.
-                // Namun sesuai kode sebelumnya, kita tetap izinkan lanjut (fallback).
                 window.presenceApp.isLocReady = true; 
             }
         }, {
@@ -2037,7 +2057,6 @@ class="presence-container">
         });
     };
 
-    // Stop location watcher (dipanggil saat ke step foto)
     window.stopLocationTracking = () => {
         if (locationWatcherId !== null) {
             navigator.geolocation.clearWatch(locationWatcherId);
@@ -2128,12 +2147,10 @@ class="presence-container">
         }
 
         if(e.target.closest('#refresh-location')) {
-            // Di step lokasi: restart tracking; di step lain: tidak ada
             if(typeof startLocationTracking === 'function') startLocationTracking();
         }
     });
 
-    // go-to-form event (fallback jika Alpine access via _x_dataStack gagal)
     document.addEventListener('go-to-form', () => {
         const presenceContainer = document.querySelector('[x-data]');
         if (presenceContainer && presenceContainer._x_dataStack) {
@@ -2145,7 +2162,6 @@ class="presence-container">
         }
     });
 
-    // Toggle map panel collapsible
     window.toggleMapPanel = () => {
         const panel = document.getElementById('map-panel');
         if (!panel) return;
@@ -2166,10 +2182,7 @@ class="presence-container">
         if(el2) el2.textContent = timeStr;
     }, 1000);
 
-
-    // Event: kembali ke layar pilihan (tombol Kembali / user navigasi keluar form)
     document.addEventListener('go-to-choice', () => {
-        // Stop real-time location watcher
         if (locationWatcherId !== null) {
             navigator.geolocation.clearWatch(locationWatcherId);
             locationWatcherId = null;
@@ -2184,12 +2197,10 @@ class="presence-container">
             clearInterval(detectionInterval);
             detectionInterval = null;
         }
-        // Reset peta agar bisa re-init saat buka lagi
         map = null;
         marker = null;
         isLocationInRange = null;
 
-        // Alpine: kembali ke step choice + reset isLocReady
         if (window.presenceApp) {
             window.presenceApp.step = 'choice';
             window.presenceApp.isLocReady = false;
