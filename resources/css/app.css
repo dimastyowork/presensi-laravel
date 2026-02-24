@@ -1035,3 +1035,121 @@ pre[class*='language-'] {
         margin-right: -60px !important;
     }
 }
+
+/* Unified table + filtering style for management/report pages */
+.user-management-container .search-section,
+.unit-management-container .search-section,
+.shift-management-container .search-section,
+.hrd-report-container .filter-section {
+    margin-bottom: 24px !important;
+    padding: 24px !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--card-border, rgba(0, 0, 0, 0.08)) !important;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.8)) !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+.user-management-container .search-form,
+.unit-management-container .search-form,
+.shift-management-container .search-form,
+.hrd-report-container .filter-form {
+    display: flex !important;
+    gap: 16px !important;
+    align-items: flex-end !important;
+    flex-wrap: wrap !important;
+}
+
+.user-management-container .search-input,
+.unit-management-container .search-input,
+.shift-management-container .search-input,
+.hrd-report-container .filter-input {
+    min-height: 46px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--card-border, rgba(0, 0, 0, 0.1)) !important;
+}
+
+.user-management-container .search-input:focus,
+.unit-management-container .search-input:focus,
+.shift-management-container .search-input:focus,
+.hrd-report-container .filter-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14) !important;
+}
+
+.user-management-container .btn-search,
+.unit-management-container .btn-search,
+.shift-management-container .btn-search,
+.user-management-container .btn-reset,
+.unit-management-container .btn-reset,
+.shift-management-container .btn-reset {
+    min-height: 46px !important;
+    border-radius: 12px !important;
+}
+
+.user-management-container .table-container,
+.unit-management-container .table-container,
+.shift-management-container .table-container,
+.hrd-report-container .table-container {
+    border-radius: 20px !important;
+    border: 1px solid var(--card-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+.user-management-container .data-table,
+.unit-management-container .data-table,
+.shift-management-container .data-table,
+.hrd-report-container .data-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+.user-management-container .data-table th,
+.unit-management-container .data-table th,
+.shift-management-container .data-table th,
+.hrd-report-container .data-table th {
+    padding: 14px 16px !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+}
+
+.user-management-container .data-table td,
+.unit-management-container .data-table td,
+.shift-management-container .data-table td,
+.hrd-report-container .data-table td {
+    padding: 14px 16px !important;
+    border-bottom: 1px solid var(--card-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+.user-management-container .data-table tbody tr,
+.unit-management-container .data-table tbody tr,
+.shift-management-container .data-table tbody tr,
+.hrd-report-container .data-table tbody tr {
+    transition: background-color 0.2s ease !important;
+}
+
+.user-management-container .data-table tbody tr:hover,
+.unit-management-container .data-table tbody tr:hover,
+.shift-management-container .data-table tbody tr:hover,
+.hrd-report-container .data-table tbody tr:hover {
+    background: var(--hover-bg, rgba(15, 23, 42, 0.04)) !important;
+}
+
+@media (max-width: 768px) {
+    .user-management-container .search-input-wrapper,
+    .unit-management-container .search-input-wrapper,
+    .shift-management-container .search-input-wrapper {
+        min-width: 100% !important;
+    }
+
+    .user-management-container .data-table th,
+    .unit-management-container .data-table th,
+    .shift-management-container .data-table th,
+    .hrd-report-container .data-table th,
+    .user-management-container .data-table td,
+    .unit-management-container .data-table td,
+    .shift-management-container .data-table td,
+    .hrd-report-container .data-table td {
+        padding: 12px 10px !important;
+    }
+}

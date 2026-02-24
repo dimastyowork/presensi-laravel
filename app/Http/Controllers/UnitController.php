@@ -21,7 +21,8 @@ class UnitController extends Controller
         $currentPage = (int) $request->input('page', 1);
         $search = trim((string) $request->input('search', ''));
 
-        $params = array_merge($request->except(['page', 'per_page']), ['all' => true]);
+        // Keep unit search behavior consistent with users: filter locally (case-insensitive).
+        $params = array_merge($request->except(['page', 'per_page', 'search']), ['all' => true]);
         $response = $this->ssoService->getUnits($params);
         
         if (!isset($response['data'])) {

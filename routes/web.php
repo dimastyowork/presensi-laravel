@@ -32,10 +32,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ganti-password', [PasswordController::class, 'changePassword'])->name('password.change');
     Route::post('/ganti-password', [PasswordController::class, 'updatePassword'])->name('password.update');
 
-    // Overtime Routes
-    Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
-    Route::get('/overtime/create', [OvertimeController::class, 'create'])->name('overtime.create');
-    Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+    Route::middleware(['maintenance:overtime'])->group(function () {
+        Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
+        Route::get('/overtime/create', [OvertimeController::class, 'create'])->name('overtime.create');
+        Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+    });
 
     Route::get('/presensi', [PresenceController::class, 'index'])->name('presence.index');
     Route::get('/presensi/riwayat', [PresenceController::class, 'history'])->name('presence.history');

@@ -22,6 +22,8 @@ class OvertimeController extends Controller
      */
     public function index(Request $request)
     {
+        if (config('maintenance.overtime')) abort(503);
+
         $userId = Auth::id();
         $baseQuery = Overtime::where('user_id', $userId);
 
@@ -61,6 +63,8 @@ class OvertimeController extends Controller
      */
     public function create()
     {
+        if (config('maintenance.overtime')) abort(503);
+
         return view('pages.overtime.create');
     }
 
