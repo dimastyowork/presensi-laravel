@@ -823,16 +823,15 @@ class="presence-container">
     .btn-back-compact {
         display: flex;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
         background: var(--glass-bg);
         border: 1px solid var(--glass-border);
         cursor: pointer;
         color: var(--text-secondary);
-        font-weight: 700;
-        font-size: 0.7rem;
-        padding: 8px 10px;
         border-radius: 12px;
-        white-space: nowrap;
         backdrop-filter: blur(10px);
         transition: all 0.2s;
     }
@@ -1756,7 +1755,6 @@ class="presence-container">
 
         if (!video || !canvas) return;
 
-        // Gunakan offsetWidth/Height agar sesuai dengan tampilan CSS (Auto-Scale)
         const displaySize = { width: video.offsetWidth, height: video.offsetHeight };
         faceapi.matchDimensions(canvas, displaySize);
 
@@ -1928,7 +1926,6 @@ class="presence-container">
     let locationWatcherId = null;
     let cameraStarted = false;
 
-    // Helper: update tampilan map dari posisi baru
     function updateMapPosition(latitude, longitude) {
         if (!map) {
             map = L.map('map', { zoomControl: false }).setView([latitude, longitude], 17);
@@ -1950,9 +1947,6 @@ class="presence-container">
         }
     }
 
-    // ====== 2-STEP FLOW: LOKASI → FOTO ======
-
-    // Step 1: Tampilkan peta + tracking live → aktifkan tombol saat in range
     window.startLocationTracking = () => {
         window._hasShownLocWarning = false;
         if (!navigator.geolocation) {
