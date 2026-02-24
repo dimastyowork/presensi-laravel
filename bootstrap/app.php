@@ -16,5 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->respond(function ($response, $e, $request) {
+            if ($e instanceof \Illuminate\Session\TokenMismatchException) {
+                return redirect()
+                    ->route('login')
+                    ->withInput($request->except(['password', '_token']))
+                    ->with('error', 'Sesi Anda telah berakhir karena terlalu lama tidak aktif. Silakan mencoba login kembali.');
+            }
+
+            return $response;
+        });
     })->create();

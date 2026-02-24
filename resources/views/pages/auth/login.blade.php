@@ -366,6 +366,12 @@ body::before{
     <form method="POST" action="{{ route('login') }}">
         @csrf
         
+        @if(session('error'))
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 12px 16px; border-radius: 14px; font-size: 0.85rem; margin-bottom: 1.5rem; line-height: 1.4; text-align: center;">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <div class="field">
             <label for="nip">NIP / NIK</label>
             <div class="input-shell">
@@ -428,6 +434,24 @@ body::before{
 </div>
 
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+    setInterval(async () => {
+        try {
+            const response = await fetch('{{ url("/csrf-token") }}');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.token) {
+                    document.querySelectorAll('input[name="_token"]').forEach(input => {
+                        input.value = data.token;
+                    });
+                }
+                console.log('Session heartbeat success');
+            }
+        } catch (error) {
+            console.error('Heartbeat failed', error);
+        }
+    }, 5 * 60 * 1000);
+</script>
 </body>
 </html>
 @endsection
