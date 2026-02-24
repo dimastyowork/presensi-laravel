@@ -231,9 +231,8 @@ class="presence-container">
         <div class="form-screen animate-slide-right">
             {{-- Header compact --}}
             <div class="form-header-compact">
-                <button @click="step = 'choice'; document.dispatchEvent(new CustomEvent('go-to-choice'))" class="btn-back-compact">
+                <button @click="step = 'choice'; document.dispatchEvent(new CustomEvent('go-to-choice'))" class="btn-back-compact" title="Kembali">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
-                    <span>Kembali</span>
                 </button>
                 <div class="compact-clock-inline">
                     <span class="clock-inline-time" id="loc-live-clock">{{ \Carbon\Carbon::now()->format('H:i:s') }}</span>
@@ -333,9 +332,8 @@ class="presence-container">
         <div class="form-screen animate-slide-right">
             {{-- Header compact --}}
             <div class="form-header-compact">
-                <button @click="step = 'choice'; document.dispatchEvent(new CustomEvent('go-to-choice'))" class="btn-back-compact">
+                <button @click="step = 'choice'; document.dispatchEvent(new CustomEvent('go-to-choice'))" class="btn-back-compact" title="Kembali">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
-                    <span>Kembali</span>
                 </button>
                 <div class="compact-clock-inline">
                     <span id="live-clock" class="clock-inline-time">00:00:00</span>
