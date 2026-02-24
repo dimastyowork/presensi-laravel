@@ -8,7 +8,7 @@ class NameHelper
      * Daftar gelar yang umum digunakan di Indonesia
      */
     private static $titles = [
-        'dr.', 'dr', 'ns.', 'ns', 'apt.', 'apt', 'amd.', 'amd',
+        'dr.', 'dr', 'dra.', 'dra', 'ns.', 'ns', 'apt.', 'apt', 'amd.', 'amd',
         'prof.', 'prof', 'ir.', 'ir', 'drs.', 'drs', 'drg.', 'drg',
         's.kom', 's.kom.', 's.pd', 's.pd.', 's.si', 's.si.', 's.t', 's.t.',
         's.sos', 's.sos.', 's.e', 's.e.', 's.h', 's.h.', 's.kep', 's.kep.',
