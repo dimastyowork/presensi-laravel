@@ -3,11 +3,15 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta id="theme-color-meta" name="theme-color" content="#ffffff">
 
     <title>{{ strtoupper($__env->yieldContent('title', $title ?? 'DASHBOARD')) }} | {{ strtoupper(config('app.name')) }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo/logo-title.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo/logo-title.svg') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -35,12 +39,16 @@
                 updateTheme() {
                     const html = document.documentElement;
                     const body = document.body;
+                    const metaThemeColor = document.getElementById('theme-color-meta');
+
                     if (this.theme === 'dark') {
                         html.classList.add('dark');
                         body.classList.add('dark', 'bg-gray-900');
+                        if (metaThemeColor) metaThemeColor.setAttribute('content', '#111827');
                     } else {
                         html.classList.remove('dark');
                         body.classList.remove('dark', 'bg-gray-900');
+                        if (metaThemeColor) metaThemeColor.setAttribute('content', '#ffffff');
                     }
                 }
             });
@@ -76,10 +84,13 @@
         (function() {
             const savedTheme = localStorage.getItem('theme');
             const theme = savedTheme || 'light';
+            const metaThemeColor = document.getElementById('theme-color-meta');
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
+                if (metaThemeColor) metaThemeColor.setAttribute('content', '#111827');
             } else {
                 document.documentElement.classList.remove('dark');
+                if (metaThemeColor) metaThemeColor.setAttribute('content', '#ffffff');
             }
         })();
     </script>
@@ -115,10 +126,10 @@
                 'ml-0': $store.sidebar.isMobileOpen
             }">
             @include('layouts.app-header')
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 pb-6">
+            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 @yield('content')
-                <!-- Spacer for Mobile Bottom Nav -->
-                <div class="h-32 xl:hidden"></div>
+                <!-- Spacer for Mobile Bottom Nav (Bottom nav height + safe area) -->
+                <div class="h-28 xl:hidden"></div>
             </div>
         </div>
 

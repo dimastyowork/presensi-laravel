@@ -1950,7 +1950,22 @@ class="presence-container">
     // Step 1: Tampilkan peta + tracking live → aktifkan tombol saat in range
     window.startLocationTracking = () => {
         if (!navigator.geolocation) {
-            if (window.presenceApp) window.presenceApp.locStatusText = 'GPS tidak tersedia';
+            if (window.presenceApp) {
+                window.presenceApp.locStatusText = 'GPS tidak tersedia di browser ini';
+                window.presenceApp.locStatusType = 'warning';
+                window.presenceApp.isLocReady = true;
+            }
+            return;
+        }
+
+        // Geolocation requires Secure Context (HTTPS or localhost)
+        if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+            if (window.presenceApp) {
+                window.presenceApp.locStatusText = 'Akses Lokasi diblokir (Butuh HTTPS)';
+                window.presenceApp.locStatusType = 'warning';
+                window.presenceApp.isLocReady = true; 
+            }
+            console.warn("Geolocation requires a secure context (HTTPS or localhost).");
             return;
         }
 
@@ -1998,13 +2013,27 @@ class="presence-container">
 
         }, err => {
             if (window.presenceApp) {
-                window.presenceApp.locStatusText = 'GPS Gagal: ' + err.message;
-                window.presenceApp.isLocReady = true; // Izinkan lanjut sebagai fallback
+                let msg = 'GPS Gagal: ' + err.message;
+                if (err.code === 1) { // PERMISSION_DENIED
+                    msg = 'Akses Lokasi Ditolak. Harap izinkan GPS di browser/setelan HP Anda.';
+                } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                    msg = 'Lokasi tidak ditemukan. Pastikan GPS aktif dan sinyal kuat.';
+                } else if (err.code === 3) { // TIMEOUT
+                    msg = 'Waktu deteksi GPS habis. Silakan coba lagi.';
+                }
+                
+                window.presenceApp.locStatusText = msg;
+                window.presenceApp.locStatusType = 'warning';
+                
+                // Jika dev/debug mode mungkin ingin izinkan lanjut, 
+                // tapi secara default untuk keamanan biasanya tetap dilarang di production.
+                // Namun sesuai kode sebelumnya, kita tetap izinkan lanjut (fallback).
+                window.presenceApp.isLocReady = true; 
             }
         }, {
             enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 20000
+            maximumAge: 10000,
+            timeout: 10000
         });
     };
 
