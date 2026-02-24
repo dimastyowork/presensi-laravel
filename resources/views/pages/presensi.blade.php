@@ -818,14 +818,14 @@ class="presence-container">
     .btn-back-compact {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         background: none;
         border: none;
         cursor: pointer;
         color: var(--text-secondary);
         font-weight: 700;
-        font-size: 0.8rem;
-        padding: 6px 10px;
+        font-size: 0.75rem;
+        padding: 6px 8px;
         border-radius: 12px;
         border: 1px solid var(--glass-border);
         background: var(--glass-bg);
@@ -841,18 +841,18 @@ class="presence-container">
         justify-content: center;
     }
     .clock-inline-time {
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 900;
-        letter-spacing: -1px;
+        letter-spacing: -0.5px;
         color: var(--text-main);
     }
-    .clock-inline-separator { color: var(--text-tertiary); font-weight: 300; font-size: 1rem; }
+    .clock-inline-separator { color: var(--text-tertiary); font-weight: 300; font-size: 0.9rem; margin: 0 2px; }
     .clock-inline-date {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 700;
         color: var(--text-tertiary);
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         white-space: nowrap;
     }
     .type-indicator-compact {
@@ -1027,7 +1027,7 @@ class="presence-container">
 
     .btn-submit-compact {
         width: 100%;
-        padding: 15px;
+        padding: 14px;
         border-radius: 16px;
         background: var(--hover-bg);
         border: 1px solid var(--glass-border);
@@ -1035,7 +1035,7 @@ class="presence-container">
         font-size: 0.7rem;
         font-weight: 900;
         text-transform: uppercase;
-        letter-spacing: 3px;
+        letter-spacing: 1.5px;
         cursor: not-allowed;
         transition: all 0.4s;
     }
@@ -1045,6 +1045,12 @@ class="presence-container">
         color: white;
         cursor: pointer;
         box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+    }
+
+    @media (max-width: 380px) {
+        .btn-back-compact span { display: none; }
+        .clock-inline-date { font-size: 0.6rem; letter-spacing: 0; }
+        .btn-submit-compact { letter-spacing: 0.5px; font-size: 0.65rem; }
     }
     /* ====== END COMPACT FORM ====== */
 
