@@ -106,53 +106,72 @@
         background: none !important;
         border: none !important;
     }
+
+    @keyframes map-pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    .map-marker-pulse {
+        width: 20px;
+        height: 20px;
+        background: rgba(59, 130, 246, 0.4);
+        border-radius: 50%;
+        position: absolute;
+        animation: map-pulse 2s infinite;
+        z-index: 1;
+    }
 </style>
 
 <script>
-(function initMaps() {
-    const personIcon = L.divIcon({
-        html: `<div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                <div style="position:absolute; width:40px; height:40px; background-color:rgba(37,99,235,0.2); border-radius:50%; animation:ping 1s cubic-bezier(0,0,0.2,1) infinite;"></div>
-                <div style="position:absolute; height:30px; background-color:rgba(37,99,235,0.3); border-radius:50%;"></div>
-                <svg style="width:32px; height:32px; position:relative; z-index:10; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));"
-                    fill="#2563eb"
-                    viewBox="0 0 24 24">
-                    <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
-                </svg>
-            </div>`,
-        className: 'custom-person-marker',
-        iconSize: [40, 40],
-        iconAnchor: [20, 40]
-    });
-
-    @if($presence->location_in)
-    try {
-        const locIn = "{{ $presence->location_in }}".split(',').map(n => parseFloat(n.trim()));
-        if (locIn.length === 2 && !isNaN(locIn[0])) {
-            const mapIn = L.map('map_in', { zoomControl: false, attributionControl: false }).setView(locIn, 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(mapIn);
-            L.marker(locIn, { icon: personIcon }).addTo(mapIn);
-            setTimeout(() => mapIn.invalidateSize(), 300);
+document.addEventListener('DOMContentLoaded', function() {
+    function initMaps() {
+        if (typeof L === 'undefined') {
+            console.error('Leaflet is not loaded!');
+            return;
         }
-    } catch (e) { console.error('Map In Error:', e); }
-    @endif
 
-    @if($presence->location_out)
-    try {
-        const locOut = "{{ $presence->location_out }}".split(',').map(n => parseFloat(n.trim()));
-        if (locOut.length === 2 && !isNaN(locOut[0])) {
-            const mapOut = L.map('map_out', { zoomControl: false, attributionControl: false }).setView(locOut, 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(mapOut);
-            L.marker(locOut, { icon: personIcon }).addTo(mapOut);
-            setTimeout(() => mapOut.invalidateSize(), 300);
-        }
-    } catch (e) { console.error('Map Out Error:', e); }
-    @endif
-})();
+        const personIcon = L.divIcon({
+            html: `<div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                    <div class="map-marker-pulse"></div>
+                    <img src="{{ asset('images/user/man.svg') }}" style="width:40px; height:40px; position:relative; z-index:10; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+                  </div>`,
+            className: 'custom-person-marker',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+
+        @if($presence->location_in)
+        try {
+            const locIn = "{{ $presence->location_in }}".split(',').map(n => parseFloat(n.trim()));
+            if (locIn.length === 2 && !isNaN(locIn[0])) {
+                const mapIn = L.map('map_in', { zoomControl: false, attributionControl: false }).setView(locIn, 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(mapIn);
+                L.marker(locIn, { icon: personIcon }).addTo(mapIn);
+                setTimeout(() => mapIn.invalidateSize(), 500);
+            }
+        } catch (e) { console.error('Map In Error:', e); }
+        @endif
+
+        @if($presence->location_out)
+        try {
+            const locOut = "{{ $presence->location_out }}".split(',').map(n => parseFloat(n.trim()));
+            if (locOut.length === 2 && !isNaN(locOut[0])) {
+                const mapOut = L.map('map_out', { zoomControl: false, attributionControl: false }).setView(locOut, 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(mapOut);
+                L.marker(locOut, { icon: personIcon }).addTo(mapOut);
+                setTimeout(() => mapOut.invalidateSize(), 500);
+            }
+        } catch (e) { console.error('Map Out Error:', e); }
+        @endif
+    }
+
+    initMaps();
+});
 </script>
 @endpush
 

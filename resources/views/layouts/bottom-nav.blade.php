@@ -63,9 +63,9 @@
         --bottom-nav-inactive: #94a3b8;
         --bottom-nav-active: #3b82f6;
         position: fixed;
-        bottom: calc(15px + env(safe-area-inset-bottom));
-        left: 20px;
-        right: 20px;
+        bottom: 0;
+        left: 0;
+        right: 0;
         z-index: 50;
         pointer-events: none;
         transition: transform 0.28s ease, opacity 0.28s ease;
@@ -73,22 +73,19 @@
     }
 
     .bottom-nav-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 25px;
-        padding: 10px 15px;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        padding: 12px 15px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
         pointer-events: auto;
-        max-width: 500px;
-        margin: 0 auto;
+        width: 100%;
+        margin: 0;
     }
 
     .dark .bottom-nav-glass {
-        background: rgba(31, 41, 55, 0.75);
-        border-color: rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        background: #111827;
+        border-top-color: #374151;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .nav-items-wrapper {

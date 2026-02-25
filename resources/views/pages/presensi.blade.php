@@ -1371,6 +1371,21 @@ class="presence-container">
     .animate-slide-up { animation: slide-up 0.5s ease-out; }
     .animate-bounce { animation: bounce 0.5s ease-out; }
     .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    
+    @keyframes map-pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    .map-marker-pulse {
+        width: 20px;
+        height: 20px;
+        background: rgba(59, 130, 246, 0.4);
+        border-radius: 50%;
+        position: absolute;
+        animation: map-pulse 2s infinite;
+        z-index: 1;
+    }
 
     .liveness-instruction-container {
         position: absolute;
@@ -1925,18 +1940,13 @@ class="presence-container">
     let cameraStarted = false;
 
     const personIcon = L.divIcon({
-        html: `<div class="relative flex items-center justify-center">
-                <div class="absolute w-10 h-10 bg-blue-600/20 rounded-full animate-ping" style="background-color: rgba(37, 99, 235, 0.2);"></div>
-                <div class="absolute bg-blue-600/30 rounded-full" style="background-color: rgba(37, 99, 235, 0.3);"></div>
-                <svg class="w-8 h-8 relative z-10 drop-shadow-lg" 
-                    fill="#2563eb" 
-                    viewBox="0 0 24 24">
-                    <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
-                </svg>
-            </div>`,
-        className: 'custom-person-marker',
-        iconSize: [40, 40],
-        iconAnchor: [20, 35]
+        html: `<div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                <div class="map-marker-pulse"></div>
+                <img src="{{ asset('images/user/man.svg') }}" style="width:45px; height:45px; position:relative; z-index:10; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+              </div>`,
+        className: 'custom-person-marker-container',
+        iconSize: [45, 45],
+        iconAnchor: [22, 22]
     });
 
     function updateMapPosition(latitude, longitude) {
