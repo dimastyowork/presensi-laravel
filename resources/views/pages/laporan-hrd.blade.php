@@ -330,18 +330,18 @@
                                         <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
                                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Masuk</label>
                                             <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="formatTime(selectedPresence.time_in)"></p>
-                                            <a :href="getMapsUrl(selectedPresence.location_in)" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1" x-show="selectedPresence.location_in">
+                                             <a :href="getMapsUrl(selectedPresence.location_in)" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1" x-show="selectedPresence.location_in">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                                 Lokasi
-                                            </a>
+                                             </a>
                                         </div>
                                         <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
                                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Keluar</label>
                                             <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="formatTime(selectedPresence.time_out)"></p>
-                                            <a :href="getMapsUrl(selectedPresence.location_out)" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1" x-show="selectedPresence.location_out">
+                                             <a :href="getMapsUrl(selectedPresence.location_out)" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1" x-show="selectedPresence.location_out">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                                 Lokasi
-                                            </a>
+                                             </a>
                                         </div>
                                     </div>
                                 </div>
