@@ -5,15 +5,20 @@ import ApexCharts from 'apexcharts';
 // flatpickr
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import { Indonesian } from "flatpickr/dist/l10n/id.js";
+import {
+    Indonesian
+} from "flatpickr/dist/l10n/id.js";
 
 // FullCalendar
-import { Calendar } from '@fullcalendar/core';
+import {
+    Calendar
+} from '@fullcalendar/core';
 
 window.Alpine = Alpine;
 window.ApexCharts = ApexCharts;
 window.flatpickr = flatpickr;
 window.FullCalendar = Calendar;
+
 
 Alpine.start();
 
@@ -27,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             altFormat: "d F Y",
             dateFormat: "Y-m-d",
             allowInput: true,
-            onChange: function(selectedDates, dateStr, instance) {
+            onChange: function (selectedDates, dateStr, instance) {
                 instance.element.dispatchEvent(new Event('input'));
                 instance.element.dispatchEvent(new Event('change'));
             }
@@ -40,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dateFormat: "H:i",
             time_24hr: true,
             allowInput: true,
-            onChange: function(selectedDates, dateStr, instance) {
+            onChange: function (selectedDates, dateStr, instance) {
                 instance.element.dispatchEvent(new Event('input'));
                 instance.element.dispatchEvent(new Event('change'));
             }
@@ -79,4 +84,3 @@ document.addEventListener('DOMContentLoaded', () => {
         import('./components/calendar-init').then(module => module.calendarInit());
     }
 });
-
