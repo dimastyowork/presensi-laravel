@@ -142,13 +142,6 @@
         margin-top: 2px;
     }
 
-    .mobile-bottom-nav.is-hidden {
-        transform: translateY(130%);
-        opacity: 0;
-        pointer-events: none;
-        transition: transform 0.28s ease, opacity 0.28s ease;
-        will-change: transform, opacity;
-    }
     .dark .mobile-bottom-nav {
         --bottom-nav-inactive: #cbd5e1;
     }
@@ -176,36 +169,6 @@
 </style>
 
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const nav = document.getElementById('mobileBottomNav');
-        if (!nav) return;
-
-        let lastY = window.scrollY || 0;
-        let ticking = false;
-
-        const updateNavVisibility = () => {
-            const currentY = window.scrollY || 0;
-            const doc = document.documentElement;
-            const atBottom = (currentY + window.innerHeight) >= (doc.scrollHeight - 2);
-            const shouldHide = atBottom;
-
-            nav.classList.toggle('is-hidden', shouldHide);
-            lastY = currentY;
-            ticking = false;
-        };
-
-        window.addEventListener('scroll', function() {
-            if (!ticking) {
-                window.requestAnimationFrame(updateNavVisibility);
-                ticking = true;
-            }
-        }, { passive: true });
-
-        window.addEventListener('resize', updateNavVisibility, { passive: true });
-        updateNavVisibility();
-    });
-</script>
 
 
 

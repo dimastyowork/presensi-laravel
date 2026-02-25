@@ -128,8 +128,7 @@
             @include('layouts.app-header')
             <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 @yield('content')
-                <!-- Spacer for Mobile Bottom Nav (Bottom nav height + safe area) -->
-                <div class="h-28 xl:hidden"></div>
+                <div class="xl:hidden" style="height: 60px;"></div>
             </div>
         </div>
 

@@ -470,7 +470,7 @@ class="presence-container">
         position: relative;
     }
     @media (max-width: 767px) {
-        .presence-container { padding: 16px 10px 80px; }
+        .presence-container { padding: 16px 10px 20px; }
     }
 
     .choice-screen {
