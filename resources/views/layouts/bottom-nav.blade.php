@@ -149,9 +149,29 @@
         transition: transform 0.28s ease, opacity 0.28s ease;
         will-change: transform, opacity;
     }
-    @media (max-width: 380px) {
-        .nav-label { display: none; }
-        .nav-item { min-width: 40px; }
+    .dark .mobile-bottom-nav {
+        --bottom-nav-inactive: #cbd5e1;
+    }
+
+    @media (max-width: 400px) {
+        .nav-label { 
+            font-size: 9px;
+            letter-spacing: 0;
+        }
+        .nav-item { 
+            min-width: 50px; 
+            padding: 5px 4px;
+        }
+    }
+
+    @media (max-width: 350px) {
+        .nav-label { 
+            font-size: 8px;
+        }
+        .nav-item { 
+            min-width: 45px;
+            padding: 5px 2px;
+        }
     }
 </style>
 

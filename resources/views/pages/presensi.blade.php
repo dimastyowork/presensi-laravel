@@ -1951,7 +1951,8 @@ class="presence-container">
             if (window.presenceApp) {
                 window.presenceApp.locStatusText = 'GPS tidak tersedia di browser ini';
                 window.presenceApp.locStatusType = 'warning';
-                window.presenceApp.isLocReady = true;
+                window.presenceApp.isLocReady = false;
+                window.presenceApp.locDistance = null;
             }
             return;
         }
@@ -1961,7 +1962,8 @@ class="presence-container">
             if (window.presenceApp) {
                 window.presenceApp.locStatusText = 'Akses Lokasi diblokir (Butuh HTTPS)';
                 window.presenceApp.locStatusType = 'warning';
-                window.presenceApp.isLocReady = true; 
+                window.presenceApp.isLocReady = false;
+                window.presenceApp.locDistance = null;
             }
             console.warn("Geolocation requires a secure context (HTTPS or localhost).");
             return;
@@ -2039,8 +2041,8 @@ class="presence-container">
                 
                 window.presenceApp.locStatusText = msg;
                 window.presenceApp.locStatusType = 'warning';
-                
-                window.presenceApp.isLocReady = true; 
+                window.presenceApp.isLocReady = false;
+                window.presenceApp.locDistance = null;
             }
         }, {
             enableHighAccuracy: true,
