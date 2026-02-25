@@ -125,10 +125,65 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const leafletCdnCss = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    const leafletCdnJs = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+
+    function loadLeafletFromCdn() {
+        return new Promise((resolve, reject) => {
+            if (typeof L !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            if (!document.querySelector('link[data-leaflet-cdn="1"]')) {
+                const css = document.createElement('link');
+                css.rel = 'stylesheet';
+                css.href = leafletCdnCss;
+                css.setAttribute('data-leaflet-cdn', '1');
+                document.head.appendChild(css);
+            }
+
+            const existingScript = document.querySelector('script[data-leaflet-cdn="1"]');
+            if (existingScript) {
+                existingScript.addEventListener('load', () => resolve(), { once: true });
+                existingScript.addEventListener('error', () => reject(new Error('Failed to load Leaflet CDN script')), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = leafletCdnJs;
+            script.async = true;
+            script.setAttribute('data-leaflet-cdn', '1');
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load Leaflet CDN script'));
+            document.head.appendChild(script);
+        });
+    }
+
+    function parseLocation(raw) {
+        if (typeof raw !== 'string') return null;
+        const parts = raw.split(',').map((n) => parseFloat(String(n).trim()));
+        if (parts.length !== 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return null;
+
+        const lat = parts[0];
+        const lng = parts[1];
+
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+        return [lat, lng];
+    }
+
+    function showMapError(mapId, message) {
+        const mapEl = document.getElementById(mapId);
+        if (!mapEl) return;
+
+        mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:12px;text-align:center;color:#64748b;font-size:12px;">'
+            + message +
+            '</div>';
+    }
+
     function initMaps() {
         if (typeof L === 'undefined') {
-            console.error('Leaflet is not loaded!');
-            return;
+            throw new Error('Leaflet is not loaded');
         }
 
         const personIcon = L.divIcon({
@@ -143,34 +198,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
         @if($presence->location_in)
         try {
-            const locIn = "{{ $presence->location_in }}".split(',').map(n => parseFloat(n.trim()));
-            if (locIn.length === 2 && !isNaN(locIn[0])) {
+            const locIn = parseLocation(@json($presence->location_in));
+            const mapInEl = document.getElementById('map_in');
+            if (mapInEl && locIn) {
                 const mapIn = L.map('map_in', { zoomControl: false, attributionControl: false }).setView(locIn, 16);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19
                 }).addTo(mapIn);
                 L.marker(locIn, { icon: personIcon }).addTo(mapIn);
                 setTimeout(() => mapIn.invalidateSize(), 500);
+            } else if (mapInEl) {
+                showMapError('map_in', 'Koordinat masuk tidak valid');
             }
         } catch (e) { console.error('Map In Error:', e); }
         @endif
 
         @if($presence->location_out)
         try {
-            const locOut = "{{ $presence->location_out }}".split(',').map(n => parseFloat(n.trim()));
-            if (locOut.length === 2 && !isNaN(locOut[0])) {
+            const locOut = parseLocation(@json($presence->location_out));
+            const mapOutEl = document.getElementById('map_out');
+            if (mapOutEl && locOut) {
                 const mapOut = L.map('map_out', { zoomControl: false, attributionControl: false }).setView(locOut, 16);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19
                 }).addTo(mapOut);
                 L.marker(locOut, { icon: personIcon }).addTo(mapOut);
                 setTimeout(() => mapOut.invalidateSize(), 500);
+            } else if (mapOutEl) {
+                showMapError('map_out', 'Koordinat keluar tidak valid');
             }
         } catch (e) { console.error('Map Out Error:', e); }
         @endif
     }
 
-    initMaps();
+    const start = () => {
+        try {
+            initMaps();
+        } catch (err) {
+            console.warn('Primary Leaflet load failed, trying CDN fallback...', err);
+            loadLeafletFromCdn()
+                .then(() => initMaps())
+                .catch((cdnErr) => {
+                    console.error('Leaflet CDN fallback failed:', cdnErr);
+                    showMapError('map_in', 'Peta gagal dimuat');
+                    showMapError('map_out', 'Peta gagal dimuat');
+                });
+        }
+    };
+
+    start();
 });
 </script>
 @endpush
