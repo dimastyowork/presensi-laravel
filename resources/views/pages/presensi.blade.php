@@ -404,13 +404,13 @@ class="presence-container">
 
                 {{-- Catatan + Submit --}}
                 <div class="bottom-panel glass">
-                    <div class="note-row">
+                    <!-- <div class="note-row">
                         <div class="flex items-center gap-2 mb-2">
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2"/></svg>
                             <label class="note-label">Catatan</label>
                         </div>
                         <textarea name="note" rows="2" class="glass-textarea-compact" placeholder="Keterangan (opsional)..."></textarea>
-                    </div>
+                    </div> -->
                     <input type="hidden" name="location" id="location-input">
                     <input type="hidden" name="image" id="image-input">
                     <input type="hidden" name="is_face_detected" id="face-detected-input" value="false">
