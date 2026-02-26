@@ -2,12 +2,6 @@
 @section('title', 'Ganti Password')
 
 @section('content')
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;font-family:'Plus Jakarta Sans',sans-serif;}
@@ -419,9 +413,6 @@ body::after{
     margin-bottom:.625rem;line-height:1.5;
 }
 </style>
-</head>
-<body>
-
 <div
     x-data="{
         agreementOpen: {{ old('agreement_accepted') ? 'false' : 'true' }},
@@ -430,6 +421,24 @@ body::after{
         reachedEnd: false,
         onScroll(el) {
             if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) this.reachedEnd = true;
+        },
+        confirmSubmit() {
+            Swal.fire({
+                title: 'Simpan Password?',
+                text: 'Pastikan Anda telah mencatat password baru ini. Lanjutkan?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Ya, Simpan',
+                cancelButtonText: 'Batal',
+                background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.$refs.passwordForm.submit();
+                }
+            });
         }
     }"
 >
@@ -484,7 +493,7 @@ body::after{
             </div>
             @endif
 
-            <form method="POST" action="{{ route('password.update') }}">
+            <form method="POST" action="{{ route('password.update') }}" x-ref="passwordForm" @submit.prevent="confirmSubmit()">
                 @csrf
 
                 <div class="field">
@@ -728,6 +737,4 @@ body::after{
 </div>{{-- /modal-backdrop --}}
 
 </div>{{-- /x-data --}}
-</body>
-</html>
 @endsection

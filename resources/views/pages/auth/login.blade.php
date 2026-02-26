@@ -2,13 +2,6 @@
 @section('title', 'Masuk')
 
 @section('content')
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -349,8 +342,6 @@ body::before{
     }
 }
 </style>
-</head>
-<body>
 
 <div class="login-card">
     
@@ -452,6 +443,4 @@ body::before{
         }
     }, 5 * 60 * 1000);
 </script>
-</body>
-</html>
 @endsection

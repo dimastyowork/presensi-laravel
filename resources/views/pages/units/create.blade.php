@@ -23,42 +23,9 @@
             
             <div class="form-grid">
                 <div class="form-group full-width">
-                    <label class="form-label">Unit SSO (Opsional)</label>
-                    <select name="sso_unit_id" class="form-input @error('sso_unit_id') error @enderror">
-                        <option value="">Buat unit baru (isi Nama Unit Baru)</option>
-                        @foreach($ssoUnits as $ssoUnit)
-                            <option value="{{ $ssoUnit['id'] }}" {{ (string) old('sso_unit_id') === (string) $ssoUnit['id'] ? 'selected' : '' }}>
-                                {{ $ssoUnit['name'] }} (ID: {{ $ssoUnit['id'] }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('sso_unit_id')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <div class="form-group full-width">
-                    <label class="form-label">Nama Unit Baru (Jika belum ada di SSO)</label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="form-input @error('name') error @enderror" placeholder="Contoh: KASIR, FARMASI, LAB">
-                    <small class="form-hint">Kosongkan jika memilih unit SSO yang sudah ada.</small>
+                    <label class="form-label">Nama Unit</label>
+                    <input type="text" name="name" value="{{ old('name') }}" class="form-input @error('name') error @enderror" placeholder="Contoh: KASIR, FARMASI, LAB" required>
                     @error('name')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <div class="form-group full-width">
-                    <label class="form-label">Hari Kerja <span class="required">*</span></label>
-                    <p class="form-hint">Pilih hari kerja yang berlaku untuk unit ini (Kosongkan jika berlaku setiap hari).</p>
-                    <div class="days-checkbox-grid">
-                        @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $day)
-                            <label class="day-checkbox-item">
-                                <input type="checkbox" name="working_days[]" value="{{ $day }}" 
-                                    {{ is_array(old('working_days')) && in_array($day, old('working_days')) ? 'checked' : '' }}>
-                                <span class="day-name">{{ $day }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                    @error('working_days')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>

@@ -119,101 +119,119 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>No</th>
+                        <th style="width: 80px;">Aksi</th>
                         <th>Tanggal</th>
-                        <th>Nama</th>
-                        <th>Unit</th>
-                        <th>Total Hadir</th>
-                        <th>Total Terlambat</th>
+                        <th>Pegawai & Unit</th>
                         <th>Shift</th>
-                        <th>Jam Masuk</th>
-                        <th>Jam Keluar</th>
+                        <th>Kehadiran</th>
                         <th>Status</th>
                         <th>Keterangan</th>
-                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($presences as $index => $presence)
                     <tr>
-                        <td>{{ $presences->firstItem() + $index }}</td>
+                        {{-- Aksi --}}
                         <td>
-                            <a href="{{ request()->fullUrlWithQuery(['start_date' => $presence->date, 'end_date' => $presence->date, 'page' => null]) }}" 
-                               class="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
-                               title="Lihat Laporan Harian Tanggal Ini">
-                                {{ \Carbon\Carbon::parse($presence->date)->isoFormat('D MMM Y') }}
-                            </a>
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('hrd.detail', $presence->id) }}" 
+                                   class="btn-detail-icon"
+                                   title="Lihat Detail">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </a>
+                                @if($presence->is_pending)
+                                    <form action="{{ route('hrd.approve', $presence->id) }}" method="POST" class="inline-block">
+                                        @csrf
+                                        <button type="submit" class="btn-approve-icon" onclick="return confirm('Setujui presensi ini?')" title="Setujui">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
-                        <td class="font-semibold">
-                            <a href="{{ request()->fullUrlWithQuery(['user_id' => $presence->user_id, 'page' => null]) }}" 
-                               class="text-gray-900 dark:text-gray-100 hover:text-blue-600 hover:underline transition-colors flex items-center gap-1"
-                               title="Filter berdasar User ini">
-                                {{ $presence->user->name ?? 'N/A' }}
-                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                            </a>
-                        </td>
-                        <td><span class="unit-badge">{{ $presence->user->unit ?? '-' }}</span></td>
+
+
+                        {{-- Tanggal --}}
                         <td>
-                            <span class="text-sm font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">
-                                {{ $userAttendanceCounts[$presence->user_id] ?? 0 }} Hari
-                            </span>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-main">{{ \Carbon\Carbon::parse($presence->date)->isoFormat('D MMM Y') }}</span>
+                                <span class="text-[10px] text-dim uppercase tracking-tighter">{{ \Carbon\Carbon::parse($presence->date)->isoFormat('dddd') }}</span>
+                            </div>
                         </td>
+
+                        {{-- Pegawai & Unit --}}
                         <td>
-                            <span class="text-sm font-bold text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded">
-                                {{ $userLatenessCounts[$presence->user_id] ?? 0 }} Hari
-                            </span>
+                            <div class="flex flex-col gap-1.5">
+                                <a href="{{ request()->fullUrlWithQuery(['user_id' => $presence->user_id, 'page' => null]) }}" 
+                                   class="font-bold text-main hover:text-brand-blue flex items-center gap-1 group">
+                                    {{ $presence->user->name ?? 'N/A' }}
+                                    <svg class="w-3 h-3 text-dim opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                </a>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-secondary border border-slate-200 dark:border-slate-700">
+                                        {{ $presence->user->unit ?? '-' }}
+                                    </span>
+                                    <div class="attendance-summary-pills">
+                                        <span class="pill present" title="Total Hadir">
+                                            <svg width="8" height="8" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                            {{ $userAttendanceCounts[$presence->user_id] ?? 0 }}
+                                        </span>
+                                        <span class="pill late" title="Total Terlambat">
+                                            <svg width="8" height="8" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                                            {{ $userLatenessCounts[$presence->user_id] ?? 0 }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
+
+                        {{-- Shift --}}
                         <td><span class="shift-name-badge">{{ $presence->shift_name ?? '-' }}</span></td>
+
+                        {{-- Kehadiran Stacked --}}
                         <td>
-                            @if($presence->time_in)
-                                <span class="time-badge">
-                                    {{ \Carbon\Carbon::parse($presence->time_in)->format('H:i') }}
-                                </span>
-                            @else
-                                <span class="badge-empty">-</span>
-                            @endif
+                            <div class="attendance-stack">
+                                <div class="stack-item in">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    @if($presence->time_in)
+                                        <span class="time">{{ \Carbon\Carbon::parse($presence->time_in)->format('H:i') }}</span>
+                                    @else
+                                        <span class="text-dim">--:--</span>
+                                    @endif
+                                </div>
+                                <div class="stack-item out">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    @if($presence->time_out)
+                                        <span class="time">{{ \Carbon\Carbon::parse($presence->time_out)->format('H:i') }}</span>
+                                    @else
+                                        <span class="text-dim">--:--</span>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
-                        <td>
-                            @if($presence->time_out)
-                                <span class="time-badge">
-                                    {{ \Carbon\Carbon::parse($presence->time_out)->format('H:i') }}
-                                </span>
-                            @else
-                                <span class="badge-empty">-</span>
-                            @endif
-                        </td>
+
+                        {{-- Status --}}
                         <td>
                             @if($presence->is_pending)
-                                <span class="status-badge pending">Perlu Approval</span>
-                                <form action="{{ route('hrd.approve', $presence->id) }}" method="POST" class="inline-block ml-2">
-                                    @csrf
-                                    <button type="submit" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onclick="return confirm('Setujui presensi ini?')">
-                                        Accept
-                                    </button>
-                                </form>
+                                <span class="status-badge pending">Approval</span>
                             @elseif($presence->time_in)
                                 <span class="status-badge {{ $presence->status === 'Terlambat' ? 'late' : 'present' }}">
                                     {{ $presence->status ?? 'Hadir' }}
                                 </span>
                             @else
-                                <span class="status-badge absent">Tidak Hadir</span>
+                                <span class="status-badge absent">Absen</span>
                             @endif
                         </td>
-                        <td class="note-cell">{{ $presence->note ?? '-' }}</td>
-                        <td>
-                            <a href="{{ route('hrd.detail', $presence->id) }}" 
-                               class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-1 transition-colors duration-200">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                Detail
-                            </a>
-                        </td>
+
+                        {{-- Keterangan --}}
+                        <td class="note-cell" title="{{ $presence->note }}">{{ $presence->note ?? '-' }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="12" class="empty-state">
+                        <td colspan="8" class="empty-state">
                             <div class="empty-content">
                                 <div class="empty-icon">
                                     <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -438,6 +456,17 @@
                 maxOptions: null,
             });
         }
+        // Table Shadow on Scroll
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            tableWrapper.addEventListener('scroll', function() {
+                if (this.scrollLeft > 5) {
+                    this.classList.add('is-scrolled');
+                } else {
+                    this.classList.remove('is-scrolled');
+                }
+            });
+        }
     });
 </script>
 <style>
@@ -526,6 +555,7 @@
         --brand-green: #10b981;
         --brand-yellow: #f59e0b;
         --brand-red: #ef4444;
+        --brand-orange: #f97316;
         
         /* Light mode */
         --text-main: #1e293b;
@@ -536,7 +566,8 @@
         --card-border: rgba(0, 0, 0, 0.08);
         --glass-bg: rgba(255, 255, 255, 0.8);
         --hover-bg: rgba(0, 0, 0, 0.03);
-        --shadow-color: rgba(0, 0, 0, 0.1);
+        --header-bg: #f8fafc;
+        --shadow-color: rgba(0, 0, 0, 0.05);
     }
 
     .dark {
@@ -549,11 +580,19 @@
         --card-border: rgba(255, 255, 255, 0.08);
         --glass-bg: rgba(31, 41, 55, 0.8);
         --hover-bg: rgba(255, 255, 255, 0.05);
+        --header-bg: #262f3f;
         --shadow-color: rgba(0, 0, 0, 0.3);
     }
 
     body {
         overflow-x: hidden;
+    }
+
+    .glass {
+        background: var(--glass-bg);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
     }
 
     .hrd-report-container {
@@ -590,6 +629,7 @@
         color: var(--text-secondary);
         margin-top: 8px;
         font-size: 1rem;
+        font-weight: 500;
     }
 
     .header-actions {
@@ -862,10 +902,10 @@
     }
 
     .data-table thead {
-        background: var(--hover-bg);
         position: sticky;
         top: 0;
         z-index: 20;
+        background: var(--header-bg);
     }
 
     .data-table thead::after {
@@ -874,7 +914,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        height: 2px;
+        height: 1px;
         background: var(--card-border);
     }
 
@@ -887,12 +927,11 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         white-space: nowrap;
-        background: var(--hover-bg);
+        background: inherit; /* Inherit solid from thead */
         position: sticky;
         top: 0;
         z-index: 15;
     }
-
     .data-table td {
         padding: 16px;
         color: var(--text-main);
@@ -905,10 +944,8 @@
         transition: all 0.2s ease;
     }
 
-    .data-table tbody tr:hover {
-        background: var(--hover-bg);
-        transform: scale(1.001);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    .data-table tbody tr:hover td {
+        background: var(--hover-bg) !important;
     }
 
     .shift-name-badge {
@@ -1087,6 +1124,91 @@
         width: 100% !important;
     }
 
+    /* UI Improvements for stacked table */
+    .attendance-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .stack-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+        width: fit-content;
+    }
+    .stack-item.in {
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--brand-blue);
+    }
+    .stack-item.out {
+        background: rgba(249, 115, 22, 0.08);
+        color: var(--brand-orange);
+    }
+    .stack-item .time {
+        font-family: 'Monaco', 'Consolas', monospace;
+    }
+
+    .btn-detail-icon, .btn-approve-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-detail-icon {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--brand-blue);
+    }
+    .btn-detail-icon:hover {
+        background: var(--brand-blue);
+        color: white;
+        transform: scale(1.1);
+    }
+    .btn-approve-icon {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--brand-green);
+        border: none;
+        cursor: pointer;
+    }
+    .btn-approve-icon:hover {
+        background: var(--brand-green);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    /* Attendance Pill Styles */
+    .attendance-summary-pills {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .attendance-summary-pills .pill {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-weight: 800;
+    }
+    .attendance-summary-pills .pill.present {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--brand-green);
+    }
+    .attendance-summary-pills .pill.late {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--brand-red);
+    }
+    
+    .text-main { color: var(--text-main); }
+    .text-dim { color: var(--text-dim); }
+
     @media (max-width: 768px) {
         .hrd-report-container {
             padding: 40px 15px 30px;
@@ -1138,5 +1260,22 @@
         }
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            tableWrapper.addEventListener('scroll', function() {
+                if (this.scrollLeft > 5) {
+                    this.classList.add('is-scrolled');
+                } else {
+                    this.classList.remove('is-scrolled');
+                }
+            });
+        }
+    });
+</script>
 @endpush
 @endsection

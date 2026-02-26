@@ -9,6 +9,12 @@
             <h1 class="page-title">Manajemen <span class="text-brand">Unit</span></h1>
             <p class="page-subtitle">Data unit ditarik langsung dari Auth/SSO</p>
         </div>
+        <a href="{{ route('units.create') }}" class="btn-primary">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Tambah Unit
+        </a>
     </div>
 
     @if(session('success'))
@@ -17,6 +23,14 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert-error glass mb-6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/>
+            </svg>
+            {{ session('error') }}
         </div>
     @endif
 
@@ -42,7 +56,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>No</th>
+                        <th style="width: 80px;">Aksi</th>
                         <th>Nama Unit</th>
                         <th>Dibuat</th>
                     </tr>
@@ -50,9 +64,35 @@
                 <tbody>
                     @forelse($units as $index => $unit)
                     <tr>
-                        <td>{{ $units->firstItem() + $index }}</td>
-                        <td class="font-semibold">{{ $unit->name }}</td>
-                        <td>{{ $unit->created_at->isoFormat('D MMM Y') }}</td>
+                        {{-- Aksi --}}
+                        <td>
+                            <div class="action-buttons">
+                                @if($unit->id)
+                                <a href="{{ route('units.edit', $unit->id) }}" class="btn-action edit" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+                                <form action="{{ route('units.destroy', $unit->id) }}" method="POST" class="inline-block" id="delete-form-{{ $unit->id }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="btn-action delete" onclick="confirmDelete('delete-form-{{ $unit->id }}')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                                @else
+                                <span class="text-dim text-[10px] italic">N/A</span>
+                                @endif
+                            </div>
+                        </td>
+
+                        {{-- Nama Unit --}}
+                        <td class="font-bold text-main">{{ $unit->name }}</td>
+
+                        {{-- Dibuat --}}
+                        <td class="text-sm text-secondary">{{ $unit->created_at->isoFormat('D MMM Y') }}</td>
                     </tr>
                     @empty
                     <tr>
@@ -63,7 +103,7 @@
                                 </svg>
                             </div>
                             <p class="empty-text">Belum ada data unit</p>
-                            <p class="empty-subtext">Data unit dari Auth/SSO tidak ditemukan.</p>
+                            <p class="empty-subtext">Klik tombol "Tambah Unit" untuk menambahkan unit baru</p>
                         </td>
                     </tr>
                     @endforelse
@@ -97,6 +137,20 @@
 </div>
 
 @push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            tableWrapper.addEventListener('scroll', function() {
+                if (this.scrollLeft > 5) {
+                    this.classList.add('is-scrolled');
+                } else {
+                    this.classList.remove('is-scrolled');
+                }
+            });
+        }
+    });
+</script>
 <style>
     :root {
         --brand-blue: #3b82f6;
@@ -112,6 +166,8 @@
         --card-border: rgba(0, 0, 0, 0.08);
         --glass-bg: rgba(255, 255, 255, 0.8);
         --hover-bg: rgba(0, 0, 0, 0.03);
+        --header-bg: #f8fafc;
+        --shadow-color: rgba(0, 0, 0, 0.05);
     }
 
     .dark {
@@ -123,13 +179,15 @@
         --card-border: rgba(255, 255, 255, 0.08);
         --glass-bg: rgba(31, 41, 55, 0.8);
         --hover-bg: rgba(255, 255, 255, 0.05);
+        --header-bg: #262f3f;
         --shadow-color: rgba(0, 0, 0, 0.3);
     }
+
 
     .unit-management-container {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 60px 20px 40px;
+        padding: 20px 20px 40px;
         font-family: 'Outfit', sans-serif;
     }
 
@@ -303,6 +361,27 @@
         font-size: 1rem;
     }
 
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: var(--brand-blue);
+        color: white;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background: var(--brand-blue-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+
     .alert-success {
         display: flex;
         align-items: center;
@@ -312,6 +391,19 @@
         border: 1px solid rgba(16, 185, 129, 0.3);
         border-radius: 12px;
         color: var(--brand-green);
+        margin-bottom: 24px;
+        font-weight: 600;
+    }
+
+    .alert-error {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        color: var(--brand-red);
         margin-bottom: 24px;
         font-weight: 600;
     }
@@ -334,8 +426,20 @@
     }
 
     .data-table thead {
-        background: var(--hover-bg);
-        border-bottom: 2px solid var(--card-border);
+        background: var(--header-bg);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .data-table thead::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: var(--card-border);
     }
 
     .data-table th {
@@ -346,7 +450,15 @@
         color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 1px;
+        background: inherit;
+        position: sticky;
+        top: 0;
+        z-index: 15;
     }
+
+    /* Row Hover Effect */
+    .data-table tbody tr { transition: all 0.2s ease; }
+    .data-table tbody tr:hover td { background: var(--hover-bg) !important; }
 
     .data-table td {
         padding: 16px;
@@ -354,18 +466,47 @@
         border-bottom: 1px solid var(--card-border);
     }
 
-    .data-table tbody tr {
-        transition: background 0.2s;
-    }
-
-    .data-table tbody tr:hover {
-        background: var(--hover-bg);
-    }
-
     .shifts-container, .days-container {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-action.edit {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--brand-blue);
+    }
+
+    .btn-action.edit:hover {
+        background: var(--brand-blue);
+        color: white;
+    }
+
+    .btn-action.delete {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--brand-red);
+    }
+
+    .btn-action.delete:hover {
+        background: var(--brand-red);
+        color: white;
     }
 
     .shift-badge-small {

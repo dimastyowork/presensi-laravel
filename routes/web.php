@@ -60,7 +60,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/users/quick-update-shift', [UserController::class, 'quickUpdateShift'])->name('users.quick-update-shift');
         Route::resource('users', UserController::class);
         
-        Route::resource('units', UnitController::class)->only(['index']);
+        Route::resource('units', UnitController::class)->except(['show']);
         Route::resource('shifts', ShiftController::class);
 
         Route::get('/settings', [GlobalSettingController::class, 'index'])->name('settings.index');

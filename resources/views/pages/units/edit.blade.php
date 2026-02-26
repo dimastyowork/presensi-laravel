@@ -24,24 +24,9 @@
             
             <div class="form-grid">
                 <div class="form-group full-width">
-                    <label class="form-label">Unit (SSO)</label>
-                    <input type="text" value="{{ $unit->name }} (ID: {{ $unit->id }})" class="form-input" readonly>
-                </div>
-
-                <div class="form-group full-width">
-                    <label class="form-label">Hari Kerja <span class="required">*</span></label>
-                    <p class="form-hint">Pilih hari kerja yang berlaku untuk unit ini (Kosongkan jika berlaku setiap hari).</p>
-                    <div class="days-checkbox-grid">
-                        @php $currentDays = old('working_days', $unit->working_days) ?: []; @endphp
-                        @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $day)
-                            <label class="day-checkbox-item">
-                                <input type="checkbox" name="working_days[]" value="{{ $day }}" 
-                                    {{ is_array($currentDays) && in_array($day, $currentDays) ? 'checked' : '' }}>
-                                <span class="day-name">{{ $day }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                    @error('working_days')
+                    <label class="form-label">Nama Unit</label>
+                    <input type="text" name="name" value="{{ old('name', $unit->name) }}" class="form-input @error('name') error @enderror" placeholder="Contoh: KASIR, FARMASI, LAB" required>
+                    @error('name')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>

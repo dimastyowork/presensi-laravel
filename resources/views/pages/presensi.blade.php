@@ -251,7 +251,7 @@ class="presence-container">
             </div>
 
             {{-- Instruksi --}}
-            <div class="loc-screen-info glass" style="border-radius:16px; padding:12px 16px; margin-bottom:10px;">
+            <div class="loc-screen-info glass" style="border-radius:16px; padding:6px 16px; margin-bottom:10px;">
                 <p class="flex items-center gap-2" style="font-size:0.75rem; color:var(--text-secondary); font-weight:700; margin:0;">
                     <svg class="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/></svg>
                     <span>Pastikan Anda berada <strong>di dalam area kantor</strong>, lalu tekan "Lanjutkan ke Foto"</span>
@@ -465,12 +465,12 @@ class="presence-container">
     .presence-container {
         max-width: 1100px;
         margin: 0 auto;
-        padding: 40px 20px;
+        padding: 20px 20px;
         font-family: 'Outfit', sans-serif;
         position: relative;
     }
     @media (max-width: 767px) {
-        .presence-container { padding: 16px 10px 20px; }
+        .presence-container { padding: 12px 10px 16px; }
     }
 
     .choice-screen {
@@ -1463,7 +1463,7 @@ class="presence-container">
     }
 
     @media (max-width: 900px) {
-        .presence-container { padding: 30px 15px; }
+        .presence-container { padding: 18px 15px; }
         
         .choice-cards { 
             grid-template-columns: 1fr; 

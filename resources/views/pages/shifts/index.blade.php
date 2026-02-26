@@ -52,42 +52,16 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>No</th>
-                        <th>Nama Shift</th>
-                        <th>Jam Masuk</th>
-                        <th>Jam Pulang</th>
-                        <th>Hari Shift</th>
+                        <th style="width: 80px;">Aksi</th>
+                        <th>Shift & Hari Kerja</th>
+                        <th>Jam Kerja</th>
                         <th>Dibuat</th>
-                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($shifts as $index => $shift)
                     <tr>
-                        <td>{{ $shifts->firstItem() + $index }}</td>
-                        <td class="font-semibold">{{ $shift->name }}</td>
-                        <td>
-                            <span class="time-badge in">
-                                {{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="time-badge out">
-                                {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}
-                            </span>
-                        </td>
-                        <td>
-                            @if(is_array($shift->working_days) && count($shift->working_days) > 0)
-                                <div class="days-container">
-                                    @foreach($shift->working_days as $day)
-                                        <span class="day-badge">{{ $day }}</span>
-                                    @endforeach
-                                </div>
-                            @else
-                                <span class="text-dim">Semua Hari</span>
-                            @endif
-                        </td>
-                        <td>{{ $shift->created_at->isoFormat('D MMM Y') }}</td>
+                        {{-- Aksi --}}
                         <td>
                             <div class="action-buttons">
                                 <a href="{{ route('shifts.edit', $shift->id) }}" class="btn-action edit" title="Edit">
@@ -106,10 +80,43 @@
                                 </form>
                             </div>
                         </td>
+
+                        {{-- Shift & Hari --}}
+                        <td>
+                            <div class="flex flex-col gap-1.5">
+                                <span class="font-bold text-main">{{ $shift->name }}</span>
+                                <div class="days-container">
+                                    @if(is_array($shift->working_days) && count($shift->working_days) > 0)
+                                        @foreach($shift->working_days as $day)
+                                            <span class="day-badge">{{ $day }}</span>
+                                        @endforeach
+                                    @else
+                                        <span class="text-dim text-[10px]">Semua Hari</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </td>
+
+                        {{-- Jam Kerja Stacked --}}
+                        <td>
+                            <div class="attendance-stack">
+                                <div class="stack-item in">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    <span class="time">{{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }}</span>
+                                </div>
+                                <div class="stack-item out">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    <span class="time">{{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        {{-- Dibuat --}}
+                        <td class="text-sm text-secondary">{{ $shift->created_at->isoFormat('D MMM Y') }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="4" class="empty-state">
                             <div class="empty-icon">
                                 <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -149,6 +156,20 @@
 </div>
 
 @push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            tableWrapper.addEventListener('scroll', function() {
+                if (this.scrollLeft > 5) {
+                    this.classList.add('is-scrolled');
+                } else {
+                    this.classList.remove('is-scrolled');
+                }
+            });
+        }
+    });
+</script>
 <style>
     :root {
         --brand-blue: #3b82f6;
@@ -163,7 +184,8 @@
         --card-border: rgba(0, 0, 0, 0.08);
         --glass-bg: rgba(255, 255, 255, 0.8);
         --hover-bg: rgba(0, 0, 0, 0.03);
-        --shadow-color: rgba(0, 0, 0, 0.1);
+        --header-bg: #f8fafc;
+        --shadow-color: rgba(0, 0, 0, 0.05);
     }
 
     .dark {
@@ -174,13 +196,43 @@
         --card-border: rgba(255, 255, 255, 0.08);
         --glass-bg: rgba(31, 41, 55, 0.8);
         --hover-bg: rgba(255, 255, 255, 0.05);
+        --header-bg: #262f3f;
         --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+
+    /* Attendance Pill / Stack Styles */
+    .attendance-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .stack-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+        width: fit-content;
+    }
+    .stack-item.in {
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--brand-blue);
+    }
+    .stack-item.out {
+        background: rgba(249, 115, 22, 0.08); 
+        color: #f97316;
+    }
+    .stack-item .time {
+        font-family: 'Monaco', 'Consolas', monospace;
     }
 
     .shift-management-container {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 60px 20px 40px;
+        padding: 20px 20px 40px;
         font-family: 'Outfit', sans-serif;
     }
 
@@ -353,8 +405,20 @@
     }
 
     .data-table thead {
-        background: var(--hover-bg);
-        border-bottom: 2px solid var(--card-border);
+        background: var(--header-bg);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .data-table thead::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: var(--card-border);
     }
 
     .data-table th {
@@ -365,20 +429,20 @@
         color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 1px;
+        background: inherit;
+        position: sticky;
+        top: 0;
+        z-index: 15;
     }
+
+    /* Row Hover Effect */
+    .data-table tbody tr { transition: all 0.2s ease; }
+    .data-table tbody tr:hover td { background: var(--hover-bg) !important; }
 
     .data-table td {
         padding: 16px;
         color: var(--text-main);
         border-bottom: 1px solid var(--card-border);
-    }
-
-    .data-table tbody tr {
-        transition: background 0.2s;
-    }
-
-    .data-table tbody tr:hover {
-        background: var(--hover-bg);
     }
 
     .time-badge {

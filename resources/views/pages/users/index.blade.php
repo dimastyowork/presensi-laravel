@@ -44,38 +44,20 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>No</th>
-                        <th>NIP</th>
-                        <th>Nama</th>
-                        <th>Unit</th>
+                        <th style="width: 80px;">Aksi</th>
+                        <th>Pegawai & Unit</th>
                         <th>Terdaftar</th>
-                        <th class="shift-col-head">Shift</th>
-                        <th>Aksi</th>
+                        <th class="shift-col-head">Shift Quick Assign</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($users as $index => $user)
                     <tr>
-                        <td>{{ $users->firstItem() + $index }}</td>
-                        <td><span class="nip-badge">{{ $user->nip ?? '-' }}</span></td>
-                        <td class="font-semibold">{{ $user->name }}</td>
-                        <td><span class="unit-badge">{{ $user->unit ?? '-' }}</span></td>
-                        <td>{{ $user->created_at->isoFormat('D MMM Y') }}</td>
-                        <td class="shift-col-cell">
-                            <div class="shift-quick-grid" data-user="{{ $user->id }}">
-                                @foreach($allShifts as $shift)
-                                    @php $checked = in_array((int) $shift->id, $user->shift_ids ?? [], true); @endphp
-                                    <label class="shift-quick-item {{ $checked ? 'active' : '' }}">
-                                        <input type="checkbox" class="shift-quick-checkbox" data-user-id="{{ $user->id }}" data-shift-id="{{ $shift->id }}" {{ $checked ? 'checked' : '' }}>
-                                        <span>{{ $shift->name }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </td>
+                        {{-- Aksi --}}
                         <td>
                             <div class="action-buttons">
                                 @if($user->id)
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn-action edit">
+                                <a href="{{ route('users.edit', $user->id) }}" class="btn-action edit" title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
@@ -94,10 +76,41 @@
                                 @endif
                             </div>
                         </td>
+
+                        {{-- Pegawai & Unit --}}
+                        <td>
+                            <div class="flex flex-col gap-1">
+                                <span class="font-bold text-main">{{ $user->name }}</span>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-secondary border border-slate-200 dark:border-slate-700">
+                                        {{ $user->nip ?? '-' }}
+                                    </span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
+                                        {{ $user->unit ?? '-' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        {{-- Terdaftar --}}
+                        <td class="text-sm text-secondary">{{ $user->created_at->isoFormat('D MMM Y') }}</td>
+
+                        {{-- Shift Quick Assign --}}
+                        <td class="shift-col-cell">
+                            <div class="shift-quick-grid" data-user="{{ $user->id }}">
+                                @foreach($allShifts as $shift)
+                                    @php $checked = in_array((int) $shift->id, $user->shift_ids ?? [], true); @endphp
+                                    <label class="shift-quick-item {{ $checked ? 'active' : '' }}">
+                                        <input type="checkbox" class="shift-quick-checkbox" data-user-id="{{ $user->id }}" data-shift-id="{{ $shift->id }}" {{ $checked ? 'checked' : '' }}>
+                                        <span>{{ $shift->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="4" class="empty-state">
                             <div class="empty-icon">
                                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -155,7 +168,8 @@
         --card-border: rgba(0, 0, 0, 0.08);
         --glass-bg: rgba(255, 255, 255, 0.8);
         --hover-bg: rgba(0, 0, 0, 0.03);
-        --shadow-color: rgba(0, 0, 0, 0.1);
+        --header-bg: #f8fafc;
+        --shadow-color: rgba(0, 0, 0, 0.05);
     }
 
     .dark {
@@ -167,13 +181,18 @@
         --card-border: rgba(255, 255, 255, 0.08);
         --glass-bg: rgba(31, 41, 55, 0.8);
         --hover-bg: rgba(255, 255, 255, 0.05);
+        --header-bg: #262f3f;
         --shadow-color: rgba(0, 0, 0, 0.3);
     }
+
+
+    .text-main { color: var(--text-main); }
+    .text-secondary { color: var(--text-secondary); }
 
     .user-management-container {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 60px 20px 40px;
+        padding: 20px 20px 40px;
         font-family: 'Outfit', sans-serif;
     }
 
@@ -399,8 +418,20 @@
     }
 
     .data-table thead {
-        background: var(--hover-bg);
-        border-bottom: 2px solid var(--card-border);
+        background: var(--header-bg);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .data-table thead::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: var(--card-border);
     }
 
     .data-table th {
@@ -411,20 +442,20 @@
         color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 1px;
+        background: inherit;
+        position: sticky;
+        top: 0;
+        z-index: 15;
     }
+
+    /* Row Hover Effect */
+    .data-table tbody tr { transition: all 0.2s ease; }
+    .data-table tbody tr:hover td { background: var(--hover-bg) !important; }
 
     .data-table td {
         padding: 16px;
         color: var(--text-main);
         border-bottom: 1px solid var(--card-border);
-    }
-
-    .data-table tbody tr {
-        transition: background 0.2s;
-    }
-
-    .data-table tbody tr:hover {
-        background: var(--hover-bg);
     }
 
     .nip-badge, .unit-badge {
@@ -655,6 +686,18 @@
                 }
             });
         });
+        
+        // Table Shadow on Scroll
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            tableWrapper.addEventListener('scroll', function() {
+                if (this.scrollLeft > 5) {
+                    this.classList.add('is-scrolled');
+                } else {
+                    this.classList.remove('is-scrolled');
+                }
+            });
+        }
     });
 </script>
 @endpush

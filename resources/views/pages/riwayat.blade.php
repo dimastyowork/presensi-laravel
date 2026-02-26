@@ -299,11 +299,11 @@
     .history-container { 
         max-width: 1200px; 
         margin: 0 auto; 
-        padding: 60px 20px 40px; 
+        padding: 20px 20px 40px; 
         font-family: 'Outfit', sans-serif; 
     }
     
-    .history-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; margin-bottom: 60px; flex-wrap: wrap; }
+    .history-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; margin-bottom: 40px; flex-wrap: wrap; }
     .header-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--text-main); }
     .text-brand { color: var(--brand-blue); }
     .header-subtitle { color: var(--text-dim); font-size: 1rem; margin-top: 10px; }

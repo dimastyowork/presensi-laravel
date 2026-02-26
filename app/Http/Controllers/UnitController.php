@@ -69,30 +69,77 @@ class UnitController extends Controller
         ))->onEachSide(1);
 
         return view('pages.units.index', compact('units'));
-}
+    }
 
     public function create()
     {
-        return redirect()->route('units.index')->with('error', 'Manajemen unit dikelola dari Auth/SSO.');
+        return view('pages.units.create');
     }
 
     public function store(Request $request)
     {
-        return redirect()->route('units.index')->with('error', 'Manajemen unit dikelola dari Auth/SSO.');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $payload = [
+            'name' => trim((string) $validated['name']),
+        ];
+
+        $result = $this->ssoService->createUnit($payload);
+
+        if (isset($result['error']) || (isset($result['message']) && !isset($result['id']) && !isset($result['data']))) {
+            return back()->withInput()->with('error', $result['message'] ?? 'Gagal menambahkan unit ke SSO');
+        }
+
+        return redirect()->route('units.index')->with('success', 'Unit berhasil ditambahkan ke SSO!');
     }
 
     public function edit($id)
     {
-        return redirect()->route('units.index')->with('error', 'Manajemen unit dikelola dari Auth/SSO.');
+        $unitResponse = $this->ssoService->getUnit($id);
+
+        if (isset($unitResponse['error'])) {
+            return redirect()->route('units.index')->with('error', $unitResponse['message'] ?? 'Gagal mengambil detail unit dari SSO');
+        }
+
+        $unitRaw = (array) ($unitResponse['data'] ?? $unitResponse);
+        $normalized = $this->ssoService->normalizeUnit($unitRaw);
+        $unit = (object) [
+            'id' => $normalized['id'] ?? $id,
+            'name' => $normalized['name'] ?? 'N/A',
+        ];
+
+        return view('pages.units.edit', compact('unit'));
     }
 
     public function update(Request $request, $id)
     {
-        return redirect()->route('units.index')->with('error', 'Manajemen unit dikelola dari Auth/SSO.');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $payload = [
+            'name' => trim((string) $validated['name']),
+        ];
+
+        $result = $this->ssoService->updateUnit($id, $payload);
+
+        if (isset($result['error']) || (isset($result['message']) && !isset($result['id']) && !isset($result['data']))) {
+            return back()->withInput()->with('error', $result['message'] ?? 'Gagal mengupdate unit di SSO');
+        }
+
+        return redirect()->route('units.index')->with('success', 'Unit berhasil diupdate!');
     }
 
     public function destroy($id)
     {
-        return redirect()->route('units.index')->with('error', 'Manajemen unit dikelola dari Auth/SSO.');
+        $result = $this->ssoService->deleteUnit($id);
+
+        if (isset($result['error'])) {
+            return redirect()->route('units.index')->with('error', $result['message'] ?? 'Gagal menghapus unit di SSO');
+        }
+
+        return redirect()->route('units.index')->with('success', 'Unit berhasil dihapus dari SSO!');
     }
 }

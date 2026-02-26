@@ -2,7 +2,7 @@
 @section('title', 'Laporan Lembur (Admin)')
 
 @section('content')
-<div class="history-container animate-fade-in" x-data="{ 
+<div class="hrd-report-container animate-fade-in" x-data="{ 
     showActionModal: false, 
     actionType: 'approve', 
     targetId: null,
@@ -17,10 +17,10 @@
         this.showActionModal = true;
     }
 }">
-    <div class="history-header">
+    <div class="report-header">
         <div class="header-main">
-            <h1 class="header-title">Laporan <span class="text-brand">Lembur</span></h1>
-            <p class="header-subtitle">Panel verifikasi dan pengelolaan lembur seluruh karyawan.</p>
+            <h1 class="page-title">Laporan <span class="text-brand">Lembur</span></h1>
+            <p class="page-subtitle">Panel verifikasi dan pengelolaan lembur seluruh karyawan.</p>
         </div>
     </div>
 
@@ -32,15 +32,14 @@
                  <h3 class="stat-value">{{ $stats['pending'] }}</h3>
                  <span class="stat-unit">pengajuan baru</span>
             </div>
-            <div class="stat-badge-pill">Status: Urgent</div>
         </div>
 
         <div class="stat-group">
             <div class="stat-card glass shadow-premium">
                 <p class="stat-label text-dim">Total Bulan Ini</p>
                 <div class="stat-item-row">
-                    <div class="icon-box blue shadow-blue-light">
-                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-width="2.5" stroke-linecap="round"/></svg>
+                    <div class="icon-box orange shadow-orange-light">
+                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5" stroke-linecap="round"/></svg>
                     </div>
                     <div>
                         <h4 class="stat-time text-main">{{ $stats['total_month'] }}</h4>
@@ -73,104 +72,73 @@
         </div>
     @endif
 
-    <div class="filter-card glass shadow-premium mb-8">
-        <form action="{{ route('admin.overtime.index') }}" method="GET" class="filter-grid">
-            <div class="filter-group">
-                <label class="filter-label">Karyawan / NIP</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIP..." class="filter-input">
+    <div class="filter-section glass shadow-premium mb-8">
+        <form action="{{ route('admin.overtime.index') }}" method="GET" class="filter-form">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Karyawan / NIP</label>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIP..." class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Unit</label>
+                    <select name="unit" class="filter-input">
+                        <option value="">Semua Unit</option>
+                        @foreach($units as $u)
+                            <option value="{{ $u }}" {{ request('unit') == $u ? 'selected' : '' }}>{{ $u }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select name="status" class="filter-input">
+                        <option value="">Semua Status</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Mulai Tanggal</label>
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Sampai Tanggal</label>
+                    <input type="date" name="end_date" value="{{ request('end_date') }}" class="filter-input">
+                </div>
             </div>
-            <div class="filter-group">
-                <label class="filter-label">Unit</label>
-                <select name="unit" class="filter-input">
-                    <option value="">Semua Unit</option>
-                    @foreach($units as $u)
-                        <option value="{{ $u }}" {{ request('unit') == $u ? 'selected' : '' }}>{{ $u }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">Status</label>
-                <select name="status" class="filter-input">
-                    <option value="">Semua Status</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
-                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">Mulai Tanggal</label>
-                <input type="date" name="start_date" value="{{ request('start_date') }}" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ request('end_date') }}" class="filter-input">
-            </div>
-            <div class="filter-actions self-end">
-                <button type="submit" class="btn-filter">
+            <div class="filter-actions mt-4">
+                <button type="submit" class="btn-primary">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="3"/></svg>
-                    <span>Cari</span>
+                    <span>Cari Pengajuan</span>
                 </button>
                 @if(request()->anyFilled(['search', 'unit', 'status', 'start_date', 'end_date']))
-                    <a href="{{ route('admin.overtime.index') }}" class="btn-reset">Reset</a>
+                    <a href="{{ route('admin.overtime.index') }}" class="btn-secondary">Reset</a>
                 @endif
             </div>
         </form>
     </div>
 
-    <div class="content-card glass shadow-premium">
+    <div class="table-container glass shadow-premium">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table-custom">
+            <div class="table-wrapper">
+                <table class="data-table">
                     <thead>
                         <tr>
+                            <th style="width: 100px;">Aksi</th>
                             <th>Karyawan</th>
-                            <th>Tanggal Laporan</th>
+                            <th>Tanggal</th>
                             <th>Waktu Tugas</th>
-                            <th>Alasan</th>
-                            <th>Status Akun</th>
-                            <th class="text-right">Aksi Panel</th>
+                            <th>Alasan Lembur</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($overtimes as $ot)
-                            <tr class="table-row-hover">
+                            <tr>
+                                {{-- Aksi Panel --}}
                                 <td>
-                                    <div class="user-info">
-                                        <div>
-                                            <p class="user-name">{{ $ot->user_name }}</p>
-                                            <p class="user-nip">{{ $ot->user_nip }} • {{ $ot->user_unit }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="font-bold text-main">
-                                    {{ \Carbon\Carbon::parse($ot->date)->isoFormat('D MMM YYYY') }}
-                                </td>
-                                <td>
-                                    <div class="time-range-display">
-                                        <span class="time-pill-in">{{ substr($ot->start_time, 0, 5) }}</span>
-                                        <svg class="w-4 h-4 text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3"/></svg>
-                                        <span class="time-pill-out">{{ substr($ot->end_time, 0, 5) }}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="truncate-2-lines max-w-xs text-secondary-custom">
-                                        {{ $ot->reason }}
-                                    </div>
-                                </td>
-                                <td>
-                                    @if($ot->status === 'approved')
-                                        <span class="status-pill status-approved">Disetujui</span>
-                                        <p class="text-[9px] mt-1 text-dim">Oleh: {{ $ot->approved_by }}</p>
-                                    @elseif($ot->status === 'rejected')
-                                        <span class="status-pill status-rejected">Ditolak</span>
-                                        <p class="text-[9px] mt-1 text-dim">Oleh: {{ $ot->approved_by }}</p>
-                                    @else
-                                        <span class="status-pill status-pending pulse">Pending</span>
-                                    @endif
-                                </td>
-                                <td class="text-right">
                                     @if($ot->status === 'pending')
-                                        <div class="flex justify-end gap-2">
+                                        <div class="flex gap-2">
                                             <button @click="openModal('approve', {{ $ot->id }}, '{{ addslashes($ot->user_name) }}')" 
                                                     class="btn-icon-action btn-approve" title="Setujui">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3" stroke-linecap="round"/></svg>
@@ -181,7 +149,61 @@
                                             </button>
                                         </div>
                                     @else
-                                        <span class="text-dim text-xs font-bold italic">Selesai</span>
+                                        <span class="text-dim text-[10px] font-black italic uppercase">Finished</span>
+                                    @endif
+                                </td>
+
+                                {{-- Karyawan --}}
+                                <td>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="font-bold text-main">{{ $ot->user_name }}</span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-secondary border border-slate-200 dark:border-slate-700">
+                                                {{ $ot->user_nip }}
+                                            </span>
+                                            <span class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
+                                                {{ $ot->user_unit }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Tanggal --}}
+                                <td class="font-bold text-main">
+                                    {{ \Carbon\Carbon::parse($ot->date)->isoFormat('D MMM YYYY') }}
+                                </td>
+
+                                {{-- Waktu --}}
+                                <td>
+                                    <div class="attendance-stack">
+                                        <div class="stack-item in">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            <span>{{ substr($ot->start_time, 0, 5) }}</span>
+                                        </div>
+                                        <div class="stack-item out">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            <span>{{ substr($ot->end_time, 0, 5) }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Alasan --}}
+                                <td>
+                                    <div class="truncate-2-lines max-w-xs text-sm text-secondary">
+                                        {{ $ot->reason }}
+                                    </div>
+                                </td>
+
+                                {{-- Status --}}
+                                <td>
+                                    @if($ot->status === 'approved')
+                                        <span class="status-pill status-approved">Disetujui</span>
+                                        <p class="text-[9px] mt-1 text-dim">Oleh: {{ $ot->approved_by }}</p>
+                                    @elseif($ot->status === 'rejected')
+                                        <span class="status-pill status-rejected">Ditolak</span>
+                                        <p class="text-[9px] mt-1 text-dim">Oleh: {{ $ot->approved_by }}</p>
+                                    @else
+                                        <span class="status-pill status-pending pulse">Pending</span>
                                     @endif
                                 </td>
                             </tr>
@@ -253,15 +275,22 @@
 <style>
     :root {
         --brand-blue: #3b82f6;
-        --brand-blue-hover: #2563eb;
+        --brand-blue-dark: #2563eb;
+        --brand-green: #10b981;
+        --brand-yellow: #f59e0b;
+        --brand-red: #ef4444;
         --brand-orange: #f97316;
-        --brand-emerald: #10b981;
+        
         --text-main: #1e293b;
         --text-secondary: #64748b;
         --text-dim: #94a3b8;
         --card-bg: #ffffff;
-        --card-border: rgba(0, 0, 0, 0.05);
-        --hover-bg: rgba(0, 0, 0, 0.02);
+        --card-border: rgba(0, 0, 0, 0.08);
+        --glass-bg: rgba(255, 255, 255, 0.8);
+        --hover-bg: rgba(0, 0, 0, 0.03);
+        --header-bg: #f8fafc;
+        --shadow-color: rgba(0, 0, 0, 0.05);
+        --brand-blue-hover: #1d4ed8;
     }
 
     .dark {
@@ -270,129 +299,124 @@
         --text-dim: #64748b;
         --card-bg: #1f2937;
         --card-border: rgba(255, 255, 255, 0.08);
+        --glass-bg: rgba(31, 41, 55, 0.8);
         --hover-bg: rgba(255, 255, 255, 0.05);
+        --header-bg: #262f3f;
+        --brand-blue-hover: #3b82f6;
+        --shadow-color: rgba(0, 0, 0, 0.3);
     }
 
-    .history-container { max-width: 1300px; margin: 0 auto; padding: 60px 20px 40px; font-family: 'Outfit', sans-serif; }
-    .history-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; margin-bottom: 60px; flex-wrap: wrap; }
-    .header-main { flex: 1; }
-    .header-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--text-main); }
-    .text-brand { color: var(--brand-blue); }
-    .header-subtitle { color: var(--text-dim); font-size: 1rem; margin-top: 10px; }
+    .glass {
+        background: var(--glass-bg);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
 
-    .stats-grid { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 30px; margin-bottom: 60px; }
+    .hrd-report-container { max-width: 1400px; margin: 0 auto; padding: 20px 20px 40px; font-family: 'Outfit', sans-serif; }
+    
+    .report-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; margin-bottom: 40px; }
+    .page-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; letter-spacing: -2px; line-height: 1; margin: 0; color: var(--text-main); }
+    .page-subtitle { color: var(--text-dim); font-size: 1rem; margin-top: 10px; font-weight: 500; }
+    .text-brand { color: var(--brand-blue); }
+
+    .stats-grid { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 30px; margin-bottom: 40px; }
     .stat-card { border-radius: 40px; padding: 40px; position: relative; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); transition: all 0.3s ease; }
     .card-gradient { background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-hover)); color: white; border: none; }
+    .card-blur-circle { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: rgba(255,255,255,0.15); top: -100px; right: -100px; filter: blur(60px); }
+    .stat-main { margin-top: 10px; }
     .stat-value { font-size: 6rem; font-weight: 900; letter-spacing: -5px; line-height: 1; margin: 0; color: inherit; }
     .stat-unit { font-size: 1.5rem; font-weight: 700; opacity: 0.5; font-style: italic; }
     .stat-label { color: var(--text-dim); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
     .card-gradient .stat-label { color: rgba(255,255,255,0.7); }
     .stat-group { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-    .stat-item-row { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
     .icon-box { width: 70px; height: 70px; border-radius: 25px; display: flex; align-items: center; justify-content: center; }
-    .icon-box.blue { background: rgba(59, 130, 246, 0.1); color: var(--brand-blue); }
+    .icon-box.orange { background: rgba(249, 115, 22, 0.1); color: var(--brand-orange); }
     .icon-box.emerald { background: rgba(16, 185, 129, 0.1); color: var(--brand-emerald); }
-    .stat-time { font-size: 2.5rem; font-weight: 900; letter-spacing: -1.5px; color: var(--text-main); }
-    .stat-date { color: var(--text-dim); font-size: 0.875rem; margin-top: 4px; }
-    .stat-badge-pill { display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-top: 10px; }
-
-    /* Filter Card */
-    .filter-card { padding: 30px; border-radius: 30px; background: var(--card-bg); border: 1px solid var(--card-border); }
-    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-    .filter-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px; display: block; }
-    .filter-input { width: 100%; padding: 12px 18px; border-radius: 12px; background: var(--hover-bg); border: 1px solid var(--card-border); color: var(--text-main); font-weight: 600; font-size: 0.875rem; transition: all 0.3s; }
-    .filter-input:focus { outline: none; border-color: var(--brand-blue); background: var(--card-bg); }
-    .btn-filter, .btn-reset { padding: 12px 25px; border-radius: 12px; font-weight: 800; font-size: 0.875rem; display: inline-flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.3s; }
-    .btn-filter { background: var(--brand-blue); color: white; border: none; }
-    .btn-filter:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(59,130,246,0.2); }
-    .btn-reset { color: var(--text-dim); }
-
-    /* Table */
-    .content-card { border-radius: 35px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); }
-    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .table-custom { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1000px; }
-    .table-custom th { background: var(--hover-bg); padding: 22px 30px; text-align: left; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim); border-bottom: 1px solid var(--card-border); }
-    .table-custom td { padding: 22px 30px; border-bottom: 1px solid var(--card-border); transition: all 0.2s; vertical-align: middle; color: var(--text-main); }
-    .table-row-hover:hover td { background: var(--hover-bg); }
-
-    /* User Cell */
-    .user-info { display: flex; align-items: center; gap: 15px; }
-    .user-avatar { width: 45px; height: 45px; border-radius: 15px; background: var(--brand-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; }
-    .user-name { font-weight: 800; color: var(--text-main); font-size: 1rem; }
-    .user-nip { font-size: 0.75rem; color: var(--text-dim); font-weight: 600; }
-
-    .time-range-display { display: flex; align-items: center; gap: 8px; }
-    .time-pill-in, .time-pill-out { padding: 4px 12px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; }
-    .time-pill-in { background: rgba(59,130,246,0.1); color: var(--brand-blue); }
-    .time-pill-out { background: rgba(249,115,22,0.1); color: var(--brand-orange); }
-
-    .status-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 12px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
-    .status-approved { background: rgba(16,185,129,0.1); color: var(--brand-emerald); }
-    .status-rejected { background: rgba(239,68,68,0.1); color: #ef4444; }
-    .status-pending { background: rgba(245,158,11,0.1); color: #f59e0b; }
-
-    .btn-icon-action { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; border: 1px solid var(--card-border); background: var(--hover-bg); }
-    .btn-approve { color: var(--brand-emerald); }
-    .btn-approve:hover { background: var(--brand-emerald); color: white; transform: scale(1.1); }
-    .btn-reject { color: #ef4444; }
-    .btn-reject:hover { background: #ef4444; color: white; transform: scale(1.1); }
-
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-    .modal-content-glass { background: var(--card-bg); width: 100%; max-width: 450px; border-radius: 35px; padding: 40px; border: 1px solid var(--card-border); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-    .modal-textarea { width: 100%; padding: 20px; border-radius: 20px; background: var(--hover-bg); border: 1px solid var(--card-border); color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 600; resize: none; }
-    .modal-textarea:focus { outline: none; border-color: var(--brand-blue); }
-    .btn-modal-cancel, .btn-modal-confirm { flex: 1; padding: 15px; border-radius: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; border: none; }
-    .empty-state { text-align: center; padding: 100px 40px !important; }
-    .empty-icon-wrapper { display: flex; justify-content: center; margin-bottom: 20px; opacity: 0.5; }
-    .empty-text { font-weight: 700; color: var(--text-dim); margin-top: 15px; }
-    .btn-modal-confirm { color: white; }
-    .btn-modal-confirm:hover { transform: translateY(-3px); }
 
     .shadow-premium { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-    .bg-emerald { background: var(--brand-emerald); }
     .shadow-blue-light { box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1); }
     .shadow-emerald-light { box-shadow: 0 10px 20px rgba(16, 185, 129, 0.1); }
-    .shadow-red-light { box-shadow: 0 10px 20px rgba(239, 68, 68, 0.1); }
-    .pulse { animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    .shadow-orange-light { box-shadow: 0 10px 20px rgba(249, 115, 22, 0.1); }
 
-    /* Table Footer */
-    .table-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        border-top: 1px solid var(--card-border);
-        flex-wrap: wrap;
-        gap: 20px;
+    .stat-item-row { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
+    .stat-time { font-size: 2.5rem; font-weight: 900; letter-spacing: -1.5px; color: var(--text-main); }
+    .stat-date { color: var(--text-dim); font-size: 0.875rem; margin-top: 4px; }
+
+    /* Filter Section - Standardized */
+    .filter-section { background: var(--glass-bg); border: 1px solid var(--card-border); border-radius: 24px; padding: 24px; backdrop-filter: blur(20px); margin-bottom: 30px;}
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .filter-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px; display: block; }
+    .filter-input { width: 100%; padding: 12px 16px; border-radius: 12px; background: var(--hover-bg); border: 1px solid var(--card-border); color: var(--text-main); font-weight: 600; font-size: 0.9rem; transition: all 0.3s; }
+    .filter-input:focus { outline: none; border-color: var(--brand-blue); background: var(--card-bg); }
+    .filter-actions { display:flex; gap:12px; margin-top:20px; align-items:center;}
+    .btn-secondary { color: var(--text-dim); font-weight: 700; text-decoration:none; padding: 12px 20px; border-radius:12px; transition: all 0.2s;}
+    .btn-secondary:hover { background: var(--hover-bg); color: var(--brand-orange);}
+    .btn-primary { background: var(--brand-blue); color:white; border:none; padding: 12px 24px; border-radius:12px; font-weight:800; display:flex; align-items:center; gap:8px; cursor:pointer; }
+    .btn-primary:hover { background: var(--brand-blue-hover); transform: translateY(-2px); }
+
+    /* Table - Standardized */
+    .table-container { border-radius: 35px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); }
+    .table-wrapper { width: 100%; overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 800px; }
+    .data-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--header-bg);
     }
 
-    .per-page-footer {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--text-secondary);
-        font-weight: 600;
-        font-size: 0.875rem;
+    .data-table thead::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: var(--card-border);
     }
 
-    .footer-select {
-        padding: 8px 16px;
-        background: var(--hover-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        color: var(--text-main);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
-        padding-right: 40px;
-    }
+    .data-table th { padding: 22px 30px; text-align: left; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim); }
+    .data-table td { padding: 22px 30px; border-bottom: 1px solid var(--card-border); vertical-align: middle; color: var(--text-main); }
+
+    /* Row Hover Effect */
+    .data-table tbody tr { transition: all 0.2s ease; }
+    .data-table tbody tr:hover td { background: var(--hover-bg) !important; }
+
+    /* Action Buttons */
+    .btn-icon-action { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border: 1px solid var(--card-border); background: var(--hover-bg); }
+    .btn-approve { color: var(--brand-green); }
+    .btn-approve:hover { background: var(--brand-green); color: white; transform: translateY(-2px); }
+    .btn-reject { color: var(--brand-red); }
+    .btn-reject:hover { background: var(--brand-red); color: white; transform: translateY(-2px); }
+
+    /* Status Pills */
+    .status-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-approved { background: rgba(16, 185, 129, 0.1); color: var(--brand-green); }
+    .status-rejected { background: rgba(239, 68, 68, 0.1); color: var(--brand-red); }
+    .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+    /* Attendance Stack */
+    .attendance-stack { display: flex; flex-direction: column; gap: 4px; }
+    .stack-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; width: fit-content; }
+    .stack-item.in { background: rgba(37, 99, 235, 0.08); color: var(--brand-blue); }
+    .stack-item.out { background: rgba(249, 115, 22, 0.08); color: var(--brand-orange); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+    .modal-content-glass { background: var(--card-bg); width: 100%; max-width: 450px; border-radius: 30px; padding: 40px; border: 1px solid var(--card-border); box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+    .modal-textarea { width: 100%; padding: 16px; border-radius: 15px; background: var(--hover-bg); border: 1px solid var(--card-border); color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 600; resize: none; }
+    .btn-modal-cancel, .btn-modal-confirm { flex: 1; padding: 12px; border-radius: 12px; font-weight: 800; text-transform: uppercase; font-size: 0.8rem; cursor: pointer; transition: all 0.3s; border: none; }
+    .btn-modal-confirm { color: white; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 80px 40px !important; }
+    .empty-icon-wrapper { display: flex; justify-content: center; margin-bottom: 20px; opacity: 0.3; }
+    .empty-text { font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Footer */
+    .table-footer { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-top: 1px solid var(--card-border); }
+    .footer-select { padding: 8px 32px 8px 16px; background: var(--hover-bg); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-weight: 700; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 14px; }
 
     .dark .footer-select {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -422,4 +446,19 @@
         .header-title { font-size: 2.25rem; }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableWrapper = document.querySelector('.table-wrapper');
+        if (tableWrapper) {
+            tableWrapper.addEventListener('scroll', function() {
+                if (this.scrollLeft > 5) {
+                    this.classList.add('is-scrolled');
+                } else {
+                    this.classList.remove('is-scrolled');
+                }
+            });
+        }
+    });
+</script>
 @endsection

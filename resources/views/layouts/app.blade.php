@@ -126,7 +126,7 @@
                 'ml-0': $store.sidebar.isMobileOpen
             }">
             @include('layouts.app-header')
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="p-1 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 @yield('content')
                 <div class="xl:hidden" style="height: 60px;"></div>
             </div>
