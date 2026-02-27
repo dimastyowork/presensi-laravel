@@ -1818,8 +1818,6 @@ class="presence-container">
                 ctx.scale(-1, 1);
             }
             
-            const faceDetectedInput = document.getElementById('face-detected-input');
-            
             if (detection) {
                 const resizedDetections = faceapi.resizeResults(detection, displaySize);
                 faceapi.draw.drawDetections(canvas, resizedDetections);
@@ -2131,8 +2129,6 @@ class="presence-container">
             const canvas = document.getElementById('canvas');
             const preview = document.getElementById('photo-preview');
             const snapOverlay = document.getElementById('snap-overlay');
-            const retakeBtn = document.getElementById('retake-photo');
-            const submitBtn = document.getElementById('submit-btn');
             const imageInput = document.getElementById('image-input');
 
             canvas.width = webcam.videoWidth || webcam.offsetWidth;
@@ -2171,8 +2167,8 @@ class="presence-container">
             snapBtn.classList.add('loading');
             document.getElementById('snap-btn-text').textContent = 'Mengirim...';
             
-            const submitBtn = document.getElementById('submit-btn');
-            if(submitBtn) submitBtn.disabled = true;
+            const finalSubmitBtn = document.getElementById('submit-btn');
+            if(finalSubmitBtn) finalSubmitBtn.disabled = true;
 
             const form = document.getElementById('attendance-form');
             if(form) {
