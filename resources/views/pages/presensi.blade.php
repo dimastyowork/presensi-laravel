@@ -395,29 +395,18 @@ class="presence-container">
                         </div>
 
                         <div id="snap-overlay" class="snap-action-wrapper-compact">
-                            <button type="button" id="snap-btn" class="btn-snap-compact">
-                                <div class="inner-snap-circle"></div>
+                            <button type="button" id="snap-btn" class="btn-snap-one-shot" disabled>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-width="2.5"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2.5"/></svg>
+                                <span id="snap-btn-text">Ambil Gambar & Kirim</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {{-- Catatan + Submit --}}
-                <div class="bottom-panel glass">
-                    <!-- <div class="note-row">
-                        <div class="flex items-center gap-2 mb-2">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2"/></svg>
-                            <label class="note-label">Catatan</label>
-                        </div>
-                        <textarea name="note" rows="2" class="glass-textarea-compact" placeholder="Keterangan (opsional)..."></textarea>
-                    </div> -->
-                    <input type="hidden" name="location" id="location-input">
-                    <input type="hidden" name="image" id="image-input">
-                    <input type="hidden" name="is_face_detected" id="face-detected-input" value="false">
-                    <button type="submit" id="submit-btn" disabled class="btn-submit-compact">
-                        <span id="submit-text">Ambil Foto Verifikasi</span>
-                    </button>
-                </div>
+                <input type="hidden" name="location" id="location-input">
+                <input type="hidden" name="image" id="image-input">
+                <input type="hidden" name="is_face_detected" id="face-detected-input" value="false">
+                <input type="hidden" name="note" value="">
             </form>
         </div>
     </template>
@@ -921,26 +910,50 @@ class="presence-container">
 
     /* Snap button compact */
     .snap-action-wrapper-compact {
-        position: absolute; bottom: 16px; left: 0; right: 0;
+        position: absolute; bottom: 20px; left: 0; right: 0;
         display: flex; justify-content: center; z-index: 5;
     }
-    .btn-snap-compact {
-        width: 66px; height: 66px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.25);
-        padding: 6px;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .btn-snap-compact:active { transform: scale(0.88); }
-    .btn-snap-compact .inner-snap-circle {
-        width: 100%; height: 100%;
-        border-radius: 50%;
+    .btn-snap-one-shot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 24px;
+        border-radius: 100px;
         background: var(--brand-blue);
-        border: 5px solid #fff;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+        color: white;
+        border: 2px solid #fff;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+        font-size: 0.75rem;
+    }
+    .btn-snap-one-shot:disabled {
+        background: #94a3b8;
+        border-color: #cbd5e1;
+        cursor: not-allowed;
+        box-shadow: none;
+        opacity: 0.7;
+    }
+    .btn-snap-one-shot:not(:disabled):hover {
+        transform: translateY(-3px) scale(1.05);
+        background: var(--brand-blue-hover);
+        box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5);
+    }
+    .btn-snap-one-shot:active {
+        transform: translateY(-1px) scale(0.98);
+    }
+    .btn-snap-one-shot.loading {
+        cursor: wait;
+        opacity: 0.8;
+    }
+    .btn-snap-one-shot svg {
+        transition: transform 0.3s;
+    }
+    .btn-snap-one-shot:not(:disabled):hover svg {
+        transform: rotate(-15deg) scale(1.2);
     }
 
     /* GPS Strip */
@@ -1764,7 +1777,8 @@ class="presence-container">
     const startFaceDetection = () => {
         const video = document.getElementById('webcam');
         const canvas = document.getElementById('overlay');
-        const submitBtn = document.getElementById('submit-btn');
+        const snapBtn = document.getElementById('snap-btn');
+        const faceDetectedInput = document.getElementById('face-detected-input');
 
         if (!video || !canvas) return;
 
@@ -1893,12 +1907,17 @@ class="presence-container">
                 ctx.restore();
                 
                 if (window.livenessState === 2 || (!resizedDetections.landmarks && detection)) {
-                    snapBtn.style.borderColor = "#10b981"; 
-                    snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
-                    snapBtn.disabled = false;
+                    if(snapBtn) {
+                        snapBtn.style.borderColor = "#10b981"; 
+                        snapBtn.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
+                        snapBtn.disabled = false;
+                    }
                 } else {
-                     snapBtn.style.borderColor = "#f59e0b";
-                     snapBtn.style.boxShadow = "none";
+                     if(snapBtn) {
+                        snapBtn.style.borderColor = "#f59e0b";
+                        snapBtn.style.boxShadow = "none";
+                        snapBtn.disabled = true;
+                     }
                      if(faceDetectedInput) faceDetectedInput.value = "false";
                 }
                 
@@ -1909,8 +1928,11 @@ class="presence-container">
                 
                 if(faceDetectedInput) faceDetectedInput.value = "false";
                 window.livenessState = 0;
-                snapBtn.style.borderColor = "#f59e0b";
-                snapBtn.style.boxShadow = "none";
+                if(snapBtn) {
+                    snapBtn.style.borderColor = "#f59e0b";
+                    snapBtn.style.boxShadow = "none";
+                    snapBtn.disabled = true;
+                }
             }
 
         }, 80);
@@ -2136,33 +2158,35 @@ class="presence-container">
             document.getElementById('liveness-instruction').classList.add('hidden');
             snapOverlay.classList.add('hidden');
             
-            retakeBtn.classList.remove('hidden');
             imageInput.value = data;
             
-            submitBtn.disabled = false;
-            submitBtn.classList.add('active');
-            document.getElementById('submit-text').textContent = 'Kirim Presensi Sekarang';
-        }
+            // Re-fetch location to make sure it's up to date
+            const locInput = document.getElementById('location-input');
+            if (locInput && window._lastLat !== undefined) {
+                locInput.value = `${window._lastLat}, ${window._lastLng}`;
+            }
 
-        if(e.target.closest('#retake-photo')) {
-            const preview = document.getElementById('photo-preview');
-            const webcam = document.getElementById('webcam');
-            const overlay = document.getElementById('overlay');
-            const snapOverlay = document.getElementById('snap-overlay');
-            const retakeBtn = document.getElementById('retake-photo');
+            // Immediately Submit
+            snapBtn.disabled = true;
+            snapBtn.classList.add('loading');
+            document.getElementById('snap-btn-text').textContent = 'Mengirim...';
             
-            preview.classList.add('hidden');
-            webcam.classList.remove('hidden');
-            overlay.classList.remove('hidden');
-            document.getElementById('liveness-instruction').classList.remove('hidden');
-            snapOverlay.classList.remove('hidden');
-            retakeBtn.classList.add('hidden');
-            
-            if(typeof startFaceDetection === 'function') startFaceDetection();
-            
-            const sb = document.getElementById('submit-btn');
-            if(sb) { sb.disabled = true; sb.classList.remove('active'); }
-            document.getElementById('submit-text').textContent = 'Ambil Foto Verifikasi';
+            const submitBtn = document.getElementById('submit-btn');
+            if(submitBtn) submitBtn.disabled = true;
+
+            const form = document.getElementById('attendance-form');
+            if(form) {
+                // Show loading indicator
+                Swal.fire({
+                    title: 'Memproses Presensi',
+                    html: 'Mohon tunggu sebentar...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                form.submit();
+            }
         }
 
         if(e.target.closest('#refresh-location')) {

@@ -305,12 +305,12 @@ class PresencesRecapSheet implements FromCollection, WithHeadings, WithMapping, 
         $shiftStartRaw = Carbon::parse($shift->start_time);
         $shiftEndRaw = Carbon::parse($shift->end_time);
 
-        if ($shiftEndRaw->lt($shiftStartRaw) && $clockIn->lt($shiftStart)) {
+        if ($shiftEndRaw->lt($shiftStartRaw) && $clockIn->lt($shiftStart) && $clockIn->hour < 12) {
             $clockIn->addDay();
         }
 
         if ($clockIn->gt($shiftStart)) {
-            return (int) $clockIn->diffInMinutes($shiftStart);
+            return (int) abs($clockIn->diffInMinutes($shiftStart));
         }
 
         return 0;
@@ -353,11 +353,11 @@ class PresencesRecapSheet implements FromCollection, WithHeadings, WithMapping, 
         $start = Carbon::parse($date . ' ' . $overtime->start_time);
         $end = Carbon::parse($date . ' ' . $overtime->end_time);
 
-        if ($end->lte($start)) {
+        if ($end->lt($start)) {
             $end->addDay();
         }
 
-        return $end->diffInMinutes($start);
+        return (int) abs($end->diffInMinutes($start));
     }
 
     private function buildPeriodLabel(): string
