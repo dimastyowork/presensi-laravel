@@ -38,6 +38,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
     });
 
+    Route::middleware(['maintenance:leave'])->group(function () {
+        Route::get('/leave', function() { return view('errors.503'); })->name('leave.index');
+    });
+
+    Route::middleware(['maintenance:exit_permit'])->group(function () {
+        Route::get('/exit-permit', function() { return view('errors.503'); })->name('exit-permit.index');
+    });
+
+    Route::middleware(['maintenance:sick_leave'])->group(function () {
+        Route::get('/sick-leave', function() { return view('errors.503'); })->name('sick-leave.index');
+    });
+
     Route::get('/presensi', [PresenceController::class, 'index'])->name('presence.index');
     Route::get('/presensi/riwayat', [PresenceController::class, 'history'])->name('presence.history');
     Route::post('/presensi', [PresenceController::class, 'store'])->name('presence.store');
@@ -58,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/laporan-hrd/approve/{id}', [PresenceController::class, 'approve'])->name('hrd.approve');
         
         Route::post('/users/quick-update-shift', [UserController::class, 'quickUpdateShift'])->name('users.quick-update-shift');
+        Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
         Route::resource('users', UserController::class);
         
         Route::resource('units', UnitController::class)->except(['show']);

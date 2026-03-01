@@ -112,15 +112,29 @@
                 </div>
             </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn-primary">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Update User
-                </button>
-                <a href="{{ route('users.index') }}" class="btn-cancel">Batal</a>
+            <div class="form-actions-wrapper">
+                <div class="destructive-actions">
+                    <button type="button" class="btn-reset-password" onclick="confirmResetPassword()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Reset ke Password Default
+                    </button>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Update User
+                    </button>
+                    <a href="{{ route('users.index') }}" class="btn-cancel">Batal</a>
+                </div>
             </div>
+        </form>
+
+        <form id="reset-password-form" action="{{ route('users.reset-password', $user->id) }}" method="POST" style="display: none;">
+            @csrf
         </form>
     </div>
 </div>
@@ -271,10 +285,40 @@
         font-weight: 600;
     }
 
+    .form-actions-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
     .form-actions {
         display: flex;
         gap: 12px;
         justify-content: flex-end;
+    }
+
+    .btn-reset-password {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.875rem;
+    }
+
+    .btn-reset-password:hover {
+        background: #f59e0b;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
     }
 
     .btn-primary {
@@ -459,6 +503,12 @@
             });
         });
     });
+
+    function confirmResetPassword() {
+        if (confirm('Yakin ingin meriset password user ini ke default (rsasabunda)?\n\nTindakan ini juga akan menghapus status persetujuan kebijakan user sehingga user wajib menyetujui ulang saat login.')) {
+            document.getElementById('reset-password-form').submit();
+        }
+    }
 </script>
 @endpush
 @endsection

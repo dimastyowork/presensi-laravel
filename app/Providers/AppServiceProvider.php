@@ -24,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Auth::viaRequest('sso-session', function (Request $request) {
+            if (!$request->hasSession()) {
+                return null;
+            }
+
             $sessionUser = $request->session()->get('sso_user');
 
             if (!$sessionUser || !is_array($sessionUser)) {

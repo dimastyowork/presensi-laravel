@@ -224,6 +224,38 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus dari SSO!');
     }
 
+    public function resetPassword($id)
+    {
+        $userResponse = $this->ssoService->getUser($id);
+        $userRaw = $userResponse['data'] ?? $userResponse;
+
+        if (empty($userRaw) || isset($userRaw['error'])) {
+            return back()->with('error', 'User tidak ditemukan di SSO: ' . ($userRaw['message'] ?? 'Error tidak dikenal'));
+        }
+
+        $user = $this->ssoService->normalizeUser($userRaw);
+
+        $payload = [
+            'nip' => (string) $user['nip'],
+            'name' => (string) $user['name'],
+            'unit' => $user['unit'],
+            'email' => $user['email'],
+            'password' => 'rsasabunda',
+            'password_confirmation' => 'rsasabunda',
+            'is_initial_password' => true,
+        ];
+
+        $result = $this->ssoService->updateUser($id, $payload);
+
+        if (isset($result['error'])) {
+            return back()->with('error', 'Gagal meriset password di SSO: ' . ($result['message'] ?? 'Error tidak dikenal'));
+        }
+
+        \App\Models\UserAgreement::where('sso_user_id', (int) $id)->delete();
+
+        return back()->with('success', 'User ' . ($user['name'] ?? '') . ' berhasil diriset ke password default "rsasabunda" dan status persetujuan telah dihapus.');
+    }
+
     private function syncUserShifts(int $userId, array $shiftIds): void
     {
         $normalized = collect($shiftIds)

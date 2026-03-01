@@ -1,306 +1,266 @@
-@extends('layouts.fullscreen-layout')
+@extends(auth()->check() ? 'layouts.app' : 'layouts.fullscreen-layout')
 
 @section('title', '403 - Akses Dibatasi')
 
 @section('content')
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-<div class="page-root">
-    <!-- Grain texture overlay -->
-    <div class="grain"></div>
-
-    <!-- Background large 403 text -->
-    <div class="bg-number" aria-hidden="true">403</div>
-
-    <!-- Diagonal stripe accent -->
-    <div class="stripe-accent"></div>
-
-    <main class="content-wrapper">
-        <!-- Left column: icon + label -->
-        <div class="left-col">
-            <div class="icon-badge">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-            <div class="status-pill">
-                <span class="dot"></span>
-                HTTP 403 — FORBIDDEN
-            </div>
-        </div>
-
-        <!-- Right column: main copy + actions -->
-        <div class="right-col">
-            <div class="eyebrow">RS ASA BUNDA</div>
-
-            <h1 class="headline">
-                Area<br>
-                <em>Terlarang</em>
-            </h1>
-
-            <div class="divider"></div>
-
-            <p class="body-text">
-                Anda tidak memiliki otoritas untuk mengakses halaman ini. 
-                Jika Anda yakin ini adalah kesalahan, silakan hubungi administrator sistem.
-            </p>
-
-            <div class="actions">
-                <a href="/" class="btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                    </svg>
-                    Dashboard
-                </a>
-                <button onclick="window.history.back()" class="btn-ghost">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Kembali
-                </button>
-            </div>
-
-            <footer class="footer-meta">
-                &copy; {{ date('Y') }} &nbsp;·&nbsp; IT RS Asa Bunda
-            </footer>
-        </div>
-    </main>
-</div>
-
 <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap');
 
-    :root {
-        --ink:     #0e0c0a;
-        --paper:   #f5f0e8;
-        --cream:   #ede8dd;
-        --red:     #c0392b;
-        --red-dim: rgba(192, 57, 43, 0.12);
-        --border:  rgba(14, 12, 10, 0.14);
-        --mono:    'DM Mono', monospace;
-        --serif:   'DM Serif Display', serif;
-        --sans:    'Syne', sans-serif;
+    /* Hilangkan card/wrapper dari parent layout */
+    .content-area,
+    [class*="content"] > .rounded-2xl,
+    [class*="content"] > .rounded-3xl,
+    [class*="content"] > [class*="shadow"],
+    [class*="content"] > .bg-white,
+    [class*="main"] > .rounded-2xl,
+    [class*="main"] > .rounded-3xl,
+    [class*="main"] > [class*="shadow"],
+    [class*="main"] > .bg-white {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
     }
 
-    body { background: var(--paper); color: var(--ink); font-family: var(--sans); }
-
-    /* ── Root ── */
-    .page-root {
-        position: relative;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        padding: 2rem;
-        background: var(--paper);
-    }
-
-    /* ── Grain ── */
-    .grain {
-        position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-        background-repeat: repeat;
-        opacity: 0.55;
-        mix-blend-mode: multiply;
-    }
-
-    /* ── Background 403 ── */
-    .bg-number {
-        position: fixed;
-        bottom: -0.15em;
-        right: -0.05em;
-        font-family: var(--serif);
-        font-size: clamp(18rem, 35vw, 32rem);
-        color: transparent;
-        -webkit-text-stroke: 2px var(--border);
-        pointer-events: none;
-        user-select: none;
-        line-height: 1;
-        z-index: 0;
-        letter-spacing: -0.04em;
-    }
-
-    /* ── Diagonal accent ── */
-    .stripe-accent {
-        position: fixed;
-        top: 0; left: -20%;
-        width: 38%; height: 100%;
-        background: linear-gradient(to bottom, var(--red-dim), transparent 70%);
-        transform: skewX(-8deg);
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    /* ── Layout ── */
-    .content-wrapper {
-        position: relative; z-index: 2;
-        display: flex;
-        gap: clamp(3rem, 8vw, 8rem);
-        align-items: flex-start;
-        max-width: 900px;
-        width: 100%;
-        animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(28px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── Left ── */
-    .left-col {
+    .err-page {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: {{ auth()->check() ? 'transparent' : '#ffffff' }};
+        min-height: {{ auth()->check() ? 'calc(100vh - 200px)' : '100vh' }};
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
-        padding-top: 0.5rem;
-        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
     }
+    .dark .err-page { background-color: {{ auth()->check() ? 'transparent' : '#030712' }}; }
 
-    .icon-badge {
-        width: 72px; height: 72px;
-        background: var(--ink);
-        color: var(--paper);
-        border-radius: 18px;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        box-shadow: 6px 6px 0 var(--red);
-        transition: box-shadow 0.25s, transform 0.25s;
-    }
-    .icon-badge:hover { box-shadow: 8px 8px 0 var(--red); transform: translate(-2px,-2px); }
-    .icon-badge svg { width: 32px; height: 32px; }
+    /* Sparks */
+    .deco { position: absolute; pointer-events: none; animation: decoF 3.5s ease-in-out infinite; }
+    .deco:nth-child(2){ animation-delay:.7s }
+    .deco:nth-child(3){ animation-delay:1.4s }
+    .deco:nth-child(4){ animation-delay:.4s }
+    .deco:nth-child(5){ animation-delay:1.9s }
+    @keyframes decoF { 0%,100%{transform:scale(1) rotate(0deg)} 50%{transform:scale(1.15) rotate(12deg)} }
 
-    .status-pill {
-        display: flex; align-items: center; gap: 8px;
-        font-family: var(--mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--ink);
-        border: 1.5px solid var(--border);
-        border-radius: 100px;
-        padding: 6px 14px;
-        background: rgba(255,255,255,0.55);
-        white-space: nowrap;
-    }
-    .dot {
-        width: 7px; height: 7px;
-        background: var(--red);
-        border-radius: 50%;
-        animation: blink 1.8s ease-in-out infinite;
-    }
-    @keyframes blink {
-        0%,100% { opacity: 1; }
-        50% { opacity: 0.2; }
-    }
-
-    /* ── Right ── */
-    .right-col {
+    /* Main hero */
+    .err-hero {
         flex: 1;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px 24px;
+        text-align: center;
+        position: relative;
+        z-index: 10;
     }
 
-    .eyebrow {
-        font-family: var(--mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: var(--red);
-        margin-bottom: 1rem;
-        font-weight: 500;
-    }
-
-    .headline {
-        font-family: var(--serif);
-        font-size: clamp(3.5rem, 9vw, 6.5rem);
-        line-height: 0.95;
-        letter-spacing: -0.02em;
-        color: var(--ink);
-        margin-bottom: 1.75rem;
-    }
-    .headline em {
-        font-style: italic;
-        color: var(--red);
-    }
-
-    .divider {
-        width: 56px; height: 3px;
-        background: var(--ink);
-        margin-bottom: 1.5rem;
-    }
-
-    .body-text {
-        font-family: var(--sans);
-        font-size: 1rem;
-        line-height: 1.7;
-        color: rgba(14,12,10,0.65);
-        max-width: 400px;
-        font-weight: 400;
+    /* 403 number row */
+    .err-numrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 2.5rem;
     }
 
-    /* ── Buttons ── */
-    .actions {
+    .err-digit {
+        font-size: clamp(130px, 25vw, 250px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.06em;
+        color: #0f172a;
+        user-select: none;
+    }
+    .dark .err-digit { color: #f8fafc; }
+
+    /* Portal ring = the 0 */
+    .err-ring {
+        width: clamp(110px, 20vw, 200px);
+        height: clamp(140px, 26vw, 260px);
+        border: clamp(18px, 3vw, 30px) solid #ef4444;
+        border-radius: 500px;
+        position: relative;
         display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 -15px;
+        flex-shrink: 0;
+        z-index: 5;
+    }
+
+    /* Logo floats inside + overflows ring */
+    .err-logo {
+        width: 158%;
+        position: absolute;
+        z-index: 20;
+        filter: drop-shadow(0 22px 40px rgba(0,0,0,0.16));
+        animation: logoF 4s ease-in-out infinite;
+    }
+    @keyframes logoF {
+        0%,100% { transform: translateY(0); }
+        50%      { transform: translateY(-16px); }
+    }
+
+    /* OOPS pill */
+    .err-oops {
+        position: absolute;
+        top: 10%; right: -28px;
+        background: #ef4444;
+        color: #fff;
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-size: clamp(11px, 1.8vw, 15px);
+        font-weight: 800;
+        transform: rotate(12deg);
+        z-index: 30;
+        box-shadow: 0 6px 16px rgba(239,68,68,0.35);
+        white-space: nowrap;
+    }
+
+    /* ── Bottom bar ── */
+    .err-bar {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 40px 28px;
         gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 3rem;
+    }
+    @media(max-width:580px){
+        .err-bar {
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 24px 28px;
+        }
+        .err-bar-center { order: 3; }
     }
 
-    .btn-primary, .btn-ghost {
-        display: inline-flex; align-items: center; gap: 8px;
-        height: 50px; padding: 0 24px;
-        font-family: var(--sans);
-        font-size: 0.875rem;
+    /* Pill button: circle icon + label */
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 14px;
         font-weight: 700;
-        letter-spacing: 0.04em;
-        border-radius: 10px;
-        cursor: pointer;
-        border: none;
+        color: #0f172a;
         text-decoration: none;
-        transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: opacity .2s, transform .2s;
+        white-space: nowrap;
     }
+    .dark .pill { color: #f1f5f9; }
+    .pill:hover { opacity: .8; transform: translateY(-2px); }
 
-    .btn-primary {
-        background: var(--ink);
-        color: var(--paper);
-        box-shadow: 4px 4px 0 var(--red);
+    .pill-icon {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        transition: transform .2s;
     }
-    .btn-primary:hover {
-        transform: translate(-2px, -2px);
-        box-shadow: 6px 6px 0 var(--red);
-    }
-    .btn-primary svg { width: 17px; height: 17px; }
+    .pill:hover .pill-icon { transform: scale(1.08); }
+    .pill-icon-orange { background: #f97316; color: #fff; }
+    .pill-icon-green  { background: #22c55e; color: #fff; }
 
-    .btn-ghost {
-        background: transparent;
-        color: var(--ink);
-        border: 1.5px solid var(--border);
-    }
-    .btn-ghost:hover {
-        background: var(--cream);
-        transform: translate(-1px, -1px);
-    }
-    .btn-ghost svg { width: 17px; height: 17px; }
-
-    /* ── Footer ── */
-    .footer-meta {
-        font-family: var(--mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.12em;
+    /* center copyright */
+    .err-bar-center {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: rgba(14,12,10,0.35);
+        color: #94a3b8;
     }
+    .dark .err-bar-center { color: #475569; }
 
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-        .content-wrapper { flex-direction: column; gap: 2rem; }
-        .bg-number { font-size: 40vw; right: -0.1em; bottom: 0; }
-        .left-col { flex-direction: row; align-items: center; }
-        .headline { font-size: clamp(3rem, 14vw, 5rem); }
-    }
+    /* Entrance animations */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    .a1 { animation: fadeUp .7s cubic-bezier(.22,1,.36,1) both; }
+    .a2 { animation: fadeUp .65s .14s cubic-bezier(.22,1,.36,1) both; }
+    .a3 { animation: fadeUp .6s .26s cubic-bezier(.22,1,.36,1) both; }
 </style>
+
+<div class="err-page">
+
+    {{-- Decorative sparks --}}
+    <div class="deco" style="top:8%;left:7%">
+        <svg width="38" height="38" viewBox="0 0 24 24"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" fill="#ef4444" opacity=".65"/></svg>
+    </div>
+    <div class="deco" style="top:13%;right:8%">
+        <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 0l2 9.5L24 12l-10 2L12 24l-2-10L0 12l10-2z" fill="#22c55e" opacity=".55"/></svg>
+    </div>
+    <div class="deco" style="bottom:18%;right:9%">
+        <svg width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#60a5fa" opacity=".45"/></svg>
+    </div>
+    <div class="deco" style="top:52%;left:4%">
+        <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="#ef4444" opacity=".5"/></svg>
+    </div>
+    <div class="deco" style="bottom:28%;left:10%">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 0l2 9.5L24 12l-10 2L12 24l-2-10L0 12l10-2z" fill="#f97316" opacity=".5"/></svg>
+    </div>
+
+    {{-- Hero --}}
+    <main class="err-hero">
+
+        {{-- 403 --}}
+        <div class="err-numrow a1">
+            <span class="err-digit">4</span>
+
+            <div class="err-ring">
+                <img src="{{ asset('images/logo/logo-title.svg') }}"
+                     alt="{{ config('app.name') }}"
+                     class="err-logo">
+                <div class="err-oops">DENIED!</div>
+            </div>
+
+            <span class="err-digit">3</span>
+        </div>
+
+        {{-- Text --}}
+        <div class="a2" style="max-width:560px;">
+            <h1 class="text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4" style="letter-spacing:-0.02em;">
+                Akses Dibatasi<br>Area Terlarang
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed max-w-md mx-auto">
+                Anda tidak memiliki otoritas untuk mengakses halaman ini. Jika Anda yakin ini adalah kesalahan, silakan hubungi administrator sistem.
+            </p>
+        </div>
+
+    </main>
+
+    {{-- Bottom bar --}}
+    <div class="err-bar a3">
+
+        {{-- Left: back to home --}}
+        <a href="{{ url('/') }}" class="pill">
+            <span class="pill-icon pill-icon-orange">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </span>
+            Dashboard Utama
+        </a>
+
+        {{-- Center: copyright --}}
+        <span class="err-bar-center">
+            &copy; {{ date('Y') }} Unit IT RS Asa Bunda
+        </span>
+
+        {{-- Right: back --}}
+        <button type="button" onclick="window.history.back()" class="pill">
+            Kembali
+            <span class="pill-icon pill-icon-green">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <polyline points="11 17 6 12 11 7"/>
+                    <path d="M6 12h12"/>
+                </svg>
+            </span>
+        </button>
+
+    </div>
+
+</div>
 @endsection

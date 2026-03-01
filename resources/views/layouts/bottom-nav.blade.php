@@ -10,14 +10,14 @@
             'path' => '/presensi',
         ],
         [
-            'name' => 'Lembur',
-            'icon' => 'briefcase',
-            'path' => '/overtime',
-        ],
-        [
             'name' => 'Riwayat',
             'icon' => 'clock',
             'path' => '/presensi/riwayat',
+        ],
+        [
+            'name' => 'Lembur',
+            'icon' => 'briefcase',
+            'path' => '/overtime',
         ],
     ];
 
